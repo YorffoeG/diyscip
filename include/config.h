@@ -30,7 +30,7 @@
 #define MQTT_HOST   "192.168.1.9"
 #define MQTT_PORT   8080
 
-#define MQTT_CLIENTID   "E6C70616"
+#define MQTT_CLIENTID   "IzKDjF0ucOLjhBUTPxee"
 
 
 #endif // CONFIG_H

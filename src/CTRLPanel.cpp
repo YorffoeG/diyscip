@@ -198,9 +198,8 @@ boolean CTRLPanel::setDesiredTemperatureCelsius(uint16_t temp) {
         }
         delay(BUTTON_INTERVAL_MS);
       }
-      
-      return true;
     }
+    return true;
   }
   return false;
 }
@@ -209,7 +208,7 @@ boolean CTRLPanel::setPowerOn(bool v) {
   if (v  ^  (isPowerOn() == UINT8_TRUE)) {
     pushButton(BUTTON_POWER);
   } 
-  return v == (isPowerOn() == UINT8_TRUE);
+  return true;
 }
 
 boolean CTRLPanel::setFilterOn(bool v) {

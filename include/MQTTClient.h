@@ -1,6 +1,8 @@
 #ifndef MQTTClient_H
 #define MQTTClient_H
 
+#include "LEDManager.h"
+
 #include "MQTTPublisher.h"
 #include "MQTTSubscriber.h"
 #include "MQTTPacket.h"
@@ -8,11 +10,15 @@
 #include "Arduino.h"
 #include <ESP8266WiFi.h>
 
-#define MAX_PUBLISHER   10
-#define MAX_SUBSCRIBER  5
+#define MAX_PUBLISHER       10
+#define MAX_SUBSCRIBER      5
 
+#define MQTT_HOSTNAME_MAX   126
+#define MQTT_CLIENTID_MAX   31
+#define MQTT_USER_MAX       31
+#define MQTT_PASS_MAX       31
 
-#define MQTT_KEEPALIVE  60        // Keep Alive interval in Seconds
+#define MQTT_KEEPALIVE    60  // Keep Alive interval in Seconds
 
 
 /**
@@ -41,8 +47,10 @@
 class MQTTClient {
 
   public:
-    MQTTClient(const char* host, uint16_t port);
+    MQTTClient(LEDManager* led = NULL);
 
+    void setHost(const char* host);
+    void setPort(uint16_t port);
     void setClientID(const char* clientID);
     void setUser(const char* user);
     void setPassword(const char* pass);
@@ -64,22 +72,22 @@ class MQTTClient {
     void loop();
 
   private:
+    LEDManager*         led;
     static const char*  getStatus();
 
     MQTTPublisher*    addPublisher(const char* topic);
     MQTTSubscriber*   addSubscriber(const char* topic);
-    bool              isPublisherTopicMatchSubscriberTopic(const char* publisherTopic, const char* subscriberTopic);
     
     MQTTPacket*       packet;
     WiFiClient*       tcpClient;
     
-    // !!! dangereux pas de copy des valeurs... REFACTOR !!!
-    const char*       brokerHost;
-    uint16_t          brokerPort;    
-    const char*       clientID  = "";
-    const char*       user      = NULL;
-    const char*       pass      = NULL;
-    const char*       rootTopic = NULL;
+    // todo !!! dangereux pas de copy des valeurs... REFACTOR !!!
+    char              brokerHost[MQTT_HOSTNAME_MAX +1];
+    uint16_t          brokerPort;
+
+    char              clientID[MQTT_CLIENTID_MAX +1];
+    char              user[MQTT_USER_MAX +1];
+    char              pass[MQTT_PASS_MAX +1];
   
     MQTTPublisher     publishers[MAX_PUBLISHER];
     uint32_t          publisherIndex = 0;
@@ -96,6 +104,8 @@ class MQTTClient {
     void              subscribe(MQTTSubscriber& subscriber, uint32_t time); 
 
     bool              waitingPINGRESP = false;
+    bool              isMQTTConnected = false;
+    uint32_t          lastCnxAttemptTime = 0;
 };
 
 

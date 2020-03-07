@@ -8,6 +8,8 @@
 #define MQTT_KEEPALIVE_MS             (MQTT_KEEPALIVE * 1000) // in ms
 #define MQTT_KEEPALIVE_MS_THRESHOLD   (MQTT_KEEPALIVE * 800)  // in ms
 
+#define MQTT_CONNECTION_TIMELAPSE     10000 // in ms
+
 #define MQTT_ACK_TIMEOUT              15000 // interval to receive ack to subscribe/publish in ms
 
 #define MQTT_CONNECT_USER             0x80
@@ -31,9 +33,14 @@
 
 #define MQTT_TOPIC_MAXLENGTH          100
 
-MQTTClient::MQTTClient(const char* host, uint16_t port) {
-  this->brokerHost = host;
-  this->brokerPort = port;
+MQTTClient::MQTTClient(LEDManager* led) {
+  this->led = led;
+  this->led->setMode(BLINK_1);
+
+  *this->brokerHost = '\0';
+  *this->clientID   = '\0';
+  *this->user       = '\0';
+  *this->pass       = '\0';
 
   tcpClient = new WiFiClient();
   packet    = new MQTTPacket(tcpClient);
@@ -42,26 +49,37 @@ MQTTClient::MQTTClient(const char* host, uint16_t port) {
   setLastAddedPublisherUpdateInterval(UPDATE_ONCE_AT_BOOT);
 }
 
+void MQTTClient::setHost(const char* host) {
+  strncpy(this->brokerHost, host, MQTT_HOSTNAME_MAX);
+  this->brokerHost[MQTT_HOSTNAME_MAX] = '\0';
+}
+
+void MQTTClient::setPort(uint16_t port) {
+  this->brokerPort = port;
+}
+
 void MQTTClient::setClientID(const char* clientID) {
-  this->clientID = clientID;  
+  strncpy(this->clientID, clientID, MQTT_CLIENTID_MAX);
+  this->clientID[MQTT_CLIENTID_MAX] = '\0';
 }
 
 void MQTTClient::setUser(const char* user) {
-  this->user = user;  
+  strncpy(this->user, user, MQTT_USER_MAX);
+  this->user[MQTT_USER_MAX] = '\0';
 }
 
 void MQTTClient::setPassword(const char* pass) {
-  this->pass = pass;  
-}
-
-void MQTTClient::setRootTopic(const char* root) {
-  this->rootTopic = root;
+  strncpy(this->pass, pass, MQTT_PASS_MAX);
+  this->pass[MQTT_PASS_MAX] = '\0';
 }
 
 bool MQTTClient::connect() {
 
   DBG("MQTT: TCP trying to connect to %s:%d", brokerHost, brokerPort);
 
+  this->isMQTTConnected     = false;
+  this->lastCnxAttemptTime  = millis();
+    
   if (tcpClient->connect(brokerHost, brokerPort)) {
     DBG("MQTT: TCP connected");
     DBG("MQTT< CONNECT");
@@ -70,9 +88,9 @@ bool MQTTClient::connect() {
     packet->append((const uint8_t []){0x00, 0x04, 'M', 'Q', 'T', 'T', 0x04}, 7);
 
     uint8_t flags = MQTT_CONNECT_WILL | MQTT_CONNECT_WILL_RETAIN | MQTT_CONNECT_WILL_QOS1 | MQTT_CONNECT_CLEANSESSION;
-    if (user) {
+    if (*user != '\0') {
       flags |= MQTT_CONNECT_USER;
-      if (pass) {
+      if (*pass != '\0') {
         flags |= MQTT_CONNECT_PASS;
       }
     }
@@ -83,9 +101,9 @@ bool MQTTClient::connect() {
     packet->append(MQTT_CONNECT_WILL_TOPIC);
     packet->append(MQTT_CONNECT_WILL_MESSAGE);    
     
-    if (user) {
+    if (*user != '\0') {
       packet->append(user);
-      if (pass) {
+      if (*pass != '\0') {
         packet->append(pass);
       }
     }
@@ -112,6 +130,8 @@ bool MQTTClient::connect() {
             subscribers[i].setTime(0);
           }
 
+          this->led->setMode(BLINK_2);
+          isMQTTConnected = true;
           return true;
 
         } else { DBG("MQTT> CONNACK error %d", result); }
@@ -122,7 +142,7 @@ bool MQTTClient::connect() {
     tcpClient->flush();
     tcpClient->stop();
       
-  } else { DBG("MQTT: TCP Failed"); }
+  } else { DBG("MQTT: TCP connection failed"); }
  
   return false;
 }
@@ -184,6 +204,21 @@ void MQTTClient::loop() {
   MQTTSubscriber&     subscriber = subscribers[subscriberIndex];
   uint32_t            now = millis();
 
+  if (!tcpClient->connected() || !isMQTTConnected) {
+    if (isMQTTConnected) {
+      DBG("MQTT: TCP lost connection");
+      isMQTTConnected = false;
+
+      this->led->setMode(BLINK_1);
+    }
+
+    if ((now - lastCnxAttemptTime) > MQTT_CONNECTION_TIMELAPSE) {
+      connect();
+    }
+
+    return ;
+  }
+
   if (publisher.hasValue(now)) {
     publisher.setMessageID(0);  // value has change so clean previous message even it was not ack  
     publish(publisher, now);
@@ -201,14 +236,6 @@ void MQTTClient::loop() {
     subscribe(subscriber, now);   
   }
   subscriberIndex = (subscriberIndex +1) % subscriberCount;  
-  
-
-  if (!tcpClient->connected()) {
-    DBG("MQTT: TCP not connected");
-    delay(2000);
-    connect();
-    return ;
-  }
 
   if ((now - packet->getLastActivityTime()) > MQTT_KEEPALIVE_MS_THRESHOLD) {
     if (! waitingPINGRESP) {
@@ -227,6 +254,7 @@ void MQTTClient::loop() {
       tcpClient->flush();
       tcpClient->stop();
 
+      isMQTTConnected = false;
       return ;
     }
   }
@@ -315,16 +343,6 @@ void MQTTClient::loop() {
                 packet->append(messageID);
 
                 packet->send();
-              }
-
-              // while setting a value, force publish the corresponding publisher
-              // because phone app wait for the value to be confirm but it may not
-              // happen if setValue is the same than the current value.
-              for(uint32_t j=0; j<publisherCount; j++) {
-                if (isPublisherTopicMatchSubscriberTopic(publishers[j].getTopic(), topic)) {
-                  publishers[j].reset();
-                  break;
-                }
               }
 
             } else {
@@ -440,20 +458,4 @@ MQTTSubscriber* MQTTClient::addSubscriber(const char* topic) {
   } else { DBG("MQTT: too many subscriber"); }
 
   return NULL;
-}
-
-bool MQTTClient::isPublisherTopicMatchSubscriberTopic(const char* publisherTopic, const char* subscriberTopic) {
-  int i = 0;
-
-  while (publisherTopic[i] != '\0') {
-    if (subscriberTopic[i] != publisherTopic[i]) {
-      return false;
-    }
-    i++;
-  }
-  return ((publisherTopic[i++] == '/') && 
-          (publisherTopic[i++] == 's') && 
-          (publisherTopic[i++] == 'e') && 
-          (publisherTopic[i++] == 't') && 
-          (publisherTopic[i++] == '\0')); 
 }

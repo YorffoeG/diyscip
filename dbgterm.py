@@ -30,14 +30,14 @@ def main(argv):
         sys.exit(2)
 
     # Create a TCP/IP socket
-    socket.setdefaulttimeout(10)
+    socket.setdefaulttimeout(20)
 
     # Connect the socket to the port where the server is listening
     server_address = (host, port)
     timeout = False
     buffer  = None
 
-    print '\n\n\n#*#*#*#*#*#      Trying to connect to %s port %s\n' % server_address
+    print '#*#*#*#*#*#      Trying to connect to %s:%s' % server_address
 
     try:
 
@@ -51,7 +51,7 @@ def main(argv):
                 print '.'
                 continue
 
-            print '\n#*#*#*#*#*#      connected\n\n\n'
+            print '#*#*#*#*#*#      connected\n\n\n'
 
             while True:
                 try:
