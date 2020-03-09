@@ -72,10 +72,10 @@
 
 #define FRAME_LED                 0x4000
 #define FRAME_LED_POWER           0x0001
-#define FRAME_LED_BUBBLE          0x0000
-#define FRAME_LED_FILTER          0x0000
+#define FRAME_LED_BUBBLE          0x0400
+#define FRAME_LED_FILTER          0x1000
 #define FRAME_LED_HEATER          0x0000
-#define FRAME_LED_HEATREACHED     0x0000
+#define FRAME_LED_HEATREACHED     0x0200
 
 #define FRAME_BEEP_BIT            0x0100
 
@@ -102,13 +102,17 @@
 #define PREVENT_GLITCH_VALUE(src, dest, cnt)  if (dest != src) { if ((frameCounter - cnt) > RST_GLITCH_COUNTER) { cnt = frameCounter; } else if ((frameCounter - cnt) > MIN_GLITCH_COUNTER) { dest = src; }}
 
 
-#define COMMAND_ADDRESS_S0        0x01
-#define COMMAND_ADDRESS_S1        0x02
-#define COMMAND_ADDRESS_S2        0x03
+#define COMMAND_ADDRESS_S0        0x00
+#define COMMAND_ADDRESS_S1        0x01
+#define COMMAND_ADDRESS_S2        0x02
+#define COMMAND_ADDRESS_S3        0x03
+#define COMMAND_ADDRESS_S4        0x04
 
-#define BUTTON_POWER              0x00
-#define BUTTON_TEMPUP             COMMAND_ADDRESS_S0
-#define BUTTON_TEMPDOWN           COMMAND_ADDRESS_S1
+#define BUTTON_POWER              COMMAND_ADDRESS_S0
+#define BUTTON_TEMPUP             COMMAND_ADDRESS_S1
+#define BUTTON_TEMPDOWN           COMMAND_ADDRESS_S2
+#define BUTTON_FILTER             COMMAND_ADDRESS_S3
+#define BUTTON_HEATER             COMMAND_ADDRESS_S4
 
 #define BUTTON_HOLD_PRESSED_MS    300
 #define BUTTON_INTERVAL_MS        500
@@ -167,7 +171,7 @@ uint8_t CTRLPanel::isBubbleOn() {
   return (ledStatus != UNSET_VALUE) ? ((ledStatus & FRAME_LED_BUBBLE) ? UINT8_TRUE : UINT8_FALSE) : UNSET_VALUEUINT8;
 }
 
-uint8_t CTRLPanel::isHeating() {
+uint8_t CTRLPanel::isHeaterOn() {
   return (ledStatus != UNSET_VALUE) ? ((ledStatus & FRAME_LED_HEATER) ? UINT8_TRUE : UINT8_FALSE) : UNSET_VALUEUINT8;
 }
 
@@ -212,14 +216,18 @@ boolean CTRLPanel::setPowerOn(bool v) {
 }
 
 boolean CTRLPanel::setFilterOn(bool v) {
-  return false;
+  if (v ^ (isFilterOn() == UINT8_TRUE)) {
+    pushButton(BUTTON_FILTER);
+  }
+  return true;
 }
 
-boolean CTRLPanel::setHeating(bool v) {
-  return false;
+boolean CTRLPanel::setHeaterOn(bool v) {
+  if (v ^ (isHeaterOn() == UINT8_TRUE)) {
+    pushButton(BUTTON_HEATER);
+  }
+  return true;
 }
-
-
 
 /***** PRIVATE *******************************************************************************/
 CTRLPanel* CTRLPanel::instance   = NULL;
@@ -389,7 +397,6 @@ void CTRLPanel::holdRisingInterrupt() {
         }
 
       } else if (frameValue & FRAME_LED) {
-        
         PREVENT_GLITCH_VALUE(frameValue, ledStatus, lastLedStatusChangeFrameCounter);
       } 
     }

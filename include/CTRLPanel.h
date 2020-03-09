@@ -19,7 +19,7 @@ class CTRLPanel {
     uint8_t   isPowerOn();
     uint8_t   isFilterOn();
     uint8_t   isBubbleOn();
-    uint8_t   isHeating();
+    uint8_t   isHeaterOn();
     uint8_t   isHeatReached();
 
     bool      hasError();
@@ -28,7 +28,7 @@ class CTRLPanel {
     bool      setDesiredTemperatureCelsius(uint16_t temp);
     bool      setPowerOn(bool v);
     bool      setFilterOn(bool v);
-    bool      setHeating(bool v);
+    bool      setHeaterOn(bool v);
     
 
   private:
