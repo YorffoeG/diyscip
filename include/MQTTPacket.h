@@ -6,6 +6,27 @@
 #include <ESP8266WiFi.h>
 
 
+#define MQTT_KEEPALIVE    60  // Keep Alive interval in Seconds
+
+#define MQTT_CONNECT_USER             0x80
+#define MQTT_CONNECT_PASS             0x40
+#define MQTT_CONNECT_WILL_RETAIN      0x20
+#define MQTT_CONNECT_WILL_QOS1        0x08
+#define MQTT_CONNECT_WILL             0x04
+#define MQTT_CONNECT_CLEANSESSION     0x02
+
+#define MQTT_PUBLISH_DUP              0x08
+#define MQTT_PUBLISH_QOS1             0x02
+#define MQTT_PUBLISH_QOS2             0x04
+#define MQTT_PUBLISH_RETAIN           0x01
+
+#define MQTT_SUBSCRIBE_FLAGS          0x02
+#define MQTT_SUBSCRIBE_QOS            0x01
+#define MQTT_SUBACK_FAILURE           0x80                  
+
+#define MQTT_CONNECT_WILL_TOPIC       "/spa/status"
+#define MQTT_CONNECT_WILL_MESSAGE     "offline"
+
 #define MQTT_MAX_PACKET_SIZE  127
 
 class MQTTPacket {
@@ -34,6 +55,8 @@ class MQTTPacket {
     MQTTPacket(Client* client);
 
     void              reset(Type type, uint8_t flags = 0);
+    void              buildConnect(const char* deviceID, const char* user, const char* pwd);
+
     size_t            getLength();
     Type              getType();
     uint8_t           getFlags();

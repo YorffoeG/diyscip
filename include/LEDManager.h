@@ -6,8 +6,9 @@
 
 #define MODE_PATTERN_MAX    10
 
-#define BLINK_1     {2,2,0}
+#define BLINK_1     {10,10,0}
 #define BLINK_2     {10,2,0}
+#define BLINK_3     {1,1,0}
 
 class LEDManager {
 

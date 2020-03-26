@@ -1,5 +1,6 @@
 #include <Arduino.h>
 
+#include "CFGSettings.h"
 #include "CTRLPanel.h"
 #include "MQTTClient.h"
 #include "WIFIManager.h"
@@ -14,12 +15,15 @@
 
 
 /******************************************************************/
+CFGSettings   cfgSettings;
+LEDManager    ledBuiltin(LED_BUILTIN);
+WIFIManager   wifiManager(cfgSettings);
+
 CTRLPanel*    controlPanel  = CTRLPanel::getInstance();
 TEMPSensor*   tempSensor    = TEMPSensor::getInstance();
-LEDManager    ledBuiltin(LED_BUILTIN);
 
-MQTTClient*   mqttClient;
-WIFIManager*  wifiManager;
+MQTTClient*   mqttClient    = NULL;
+
 
 #ifndef NODEBUG
   #ifdef DBG_TCP_ENABLED
@@ -33,11 +37,8 @@ void setup() {
   Serial.begin(SERIAL_DEBUG_SPEED);
 
   DBG("\n\n\nSETUP: starting");
-
-  wifiManager = new WIFIManager();
-  //wifiManager->setSTASsid(WIFI_SSID);
-  //wifiManager->setSTAPass(WIFI_PWD);
-  wifiManager->startSTA();
+  
+  wifiManager.setup();
 
   #ifdef OTA_ENABLED
   
@@ -66,30 +67,35 @@ void setup() {
     serverDebug.begin();
   #endif // NODEBUG
 
+  if (wifiManager.isSTA()) {
+    ledBuiltin.setMode(BLINK_1);
 
-  mqttClient = new MQTTClient(&ledBuiltin);
-  mqttClient->setHost(MQTT_HOST);
-  mqttClient->setPort(MQTT_PORT);
-  mqttClient->setClientID(MQTT_CLIENTID);
+    mqttClient = new MQTTClient(cfgSettings);
+    mqttClient->connect();
 
-  mqttClient->connect();
+    mqttClient->addPublisher("/spa/temp/water",         []() -> uint16_t { return controlPanel->getWaterTemperatureCelsius(); });
+    mqttClient->addPublisher("/spa/temp/desired",       []() -> uint16_t { return controlPanel->getDesiredTemperatureCelsius(); });
+    mqttClient->addPublisher("/spa/state/power",        []() -> uint8_t  { return controlPanel->isPowerOn(); });
+    mqttClient->addPublisher("/spa/state/filter",       []() -> uint8_t  { return controlPanel->isFilterOn(); });
+    mqttClient->addPublisher("/spa/state/heater",       []() -> uint8_t  { return controlPanel->isHeaterOn(); });
+    mqttClient->addPublisher("/spa/state/bubble",       []() -> uint8_t  { return controlPanel->isBubbleOn(); });
+    mqttClient->addPublisher("/spa/state/heatreached",  []() -> uint8_t  { return controlPanel->isHeatReached(); });
+    mqttClient->addPublisher("/spa/state",              []() -> uint16_t { return controlPanel->getRawStatus(); });
 
-  mqttClient->addPublisher("/spa/temp/water",         []() -> uint16_t { return controlPanel->getWaterTemperatureCelsius(); });
-  mqttClient->addPublisher("/spa/temp/desired",       []() -> uint16_t { return controlPanel->getDesiredTemperatureCelsius(); });
-  mqttClient->addPublisher("/spa/state/power",        []() -> uint8_t  { return controlPanel->isPowerOn(); });
-  mqttClient->addPublisher("/spa/state/filter",       []() -> uint8_t  { return controlPanel->isFilterOn(); });
-  mqttClient->addPublisher("/spa/state/heater",       []() -> uint8_t  { return controlPanel->isHeaterOn(); });
-  mqttClient->addPublisher("/spa/state/bubble",       []() -> uint8_t  { return controlPanel->isBubbleOn(); });
-  mqttClient->addPublisher("/spa/state/heatreached",  []() -> uint8_t  { return controlPanel->isHeatReached(); });
-  mqttClient->addPublisher("/spa/state",              []() -> uint16_t { return controlPanel->getRawStatus(); });
+    mqttClient->addSubscriber("/spa/temp/desired/set",  [](uint16_t v) -> bool { return controlPanel->setDesiredTemperatureCelsius(v); });
+    mqttClient->addSubscriber("/spa/state/power/set",   [](bool v) -> bool { return controlPanel->setPowerOn(v); });
+    mqttClient->addSubscriber("/spa/state/filter/set",  [](bool v) -> bool { return controlPanel->setFilterOn(v); });
+    mqttClient->addSubscriber("/spa/state/heater/set",  [](bool v) -> bool { return controlPanel->setHeaterOn(v); });
 
-  mqttClient->addSubscriber("/spa/temp/desired/set",  [](uint16_t v) -> bool { return controlPanel->setDesiredTemperatureCelsius(v); });
-  mqttClient->addSubscriber("/spa/state/power/set",   [](bool v) -> bool { return controlPanel->setPowerOn(v); });
-  mqttClient->addSubscriber("/spa/state/filter/set",  [](bool v) -> bool { return controlPanel->setFilterOn(v); });
-  mqttClient->addSubscriber("/spa/state/heater/set",   [](bool v) -> bool { return controlPanel->setHeaterOn(v); });
+    mqttClient->addPublisher("/spa/temp/board",         []() -> uint16_t { return tempSensor->getAverageTemperatureCelsius(); });
+    mqttClient->setLastAddedPublisherUpdateInterval(TEMP_UPDATE_INTERVAL);
 
-  mqttClient->addPublisher("/spa/temp/board",         []() -> uint16_t { return tempSensor->getAverageTemperatureCelsius(); });
-  mqttClient->setLastAddedPublisherUpdateInterval(TEMP_UPDATE_INTERVAL);
+    mqttClient->setSetupModeTrigger([]() -> bool { return controlPanel->isSetupModeTriggered(); });
+
+  } else {
+    
+    ledBuiltin.setMode(BLINK_3);
+  }
 }
 
 void loop() {
@@ -111,7 +117,16 @@ void loop() {
   #endif // NODEBUG
 
   ledBuiltin.loop();
-  mqttClient->loop();
+
+  if (mqttClient != NULL) { // Wifi STA mode
+
+    if (wifiManager.isSTAConnected()) {
+      mqttClient->loop();
+    }
+
+  } else { // Wifi AP mode
+    wifiManager.loop();
+  }
 
   delay(200);
 }

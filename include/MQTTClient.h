@@ -1,7 +1,7 @@
 #ifndef MQTTClient_H
 #define MQTTClient_H
 
-#include "LEDManager.h"
+#include "CFGSettings.h"
 
 #include "MQTTPublisher.h"
 #include "MQTTSubscriber.h"
@@ -13,13 +13,10 @@
 #define MAX_PUBLISHER       10
 #define MAX_SUBSCRIBER      5
 
-#define MQTT_HOSTNAME_MAX   126
-#define MQTT_CLIENTID_MAX   31
-#define MQTT_USER_MAX       31
-#define MQTT_PASS_MAX       31
-
-#define MQTT_KEEPALIVE    60  // Keep Alive interval in Seconds
-
+#define MQTT_HOSTNAME_MAX   HOST_LEN_MAX
+#define MQTT_CLIENTID_MAX   DEVICEID_LEN_MAX
+#define MQTT_USER_MAX       USER_LEN_MAX
+#define MQTT_PASS_MAX       PWD_LEN_MAX
 
 /**
  * 
@@ -29,32 +26,12 @@
  *  CONNECT -> with CleanSession only
  * 
  * 
- *    const static char* test = R"V0G0N(
-      <html>
-        <body>
-          it works !
-        </body>
-      </html>
-
-
-      )V0G0N";
- * 
- * 
- * 
- * 
  */
 
 class MQTTClient {
 
   public:
-    MQTTClient(LEDManager* led = NULL);
-
-    void setHost(const char* host);
-    void setPort(uint16_t port);
-    void setClientID(const char* clientID);
-    void setUser(const char* user);
-    void setPassword(const char* pass);
-    void setRootTopic(const char* root);
+    MQTTClient(CFGSettings &settings);
 
     /**  !!!! ATTENTION  !!!!!
      *   'topic' string MUST be in-memory persistant, no local copy (for memory consumption reason)
@@ -68,12 +45,13 @@ class MQTTClient {
 
     void setLastAddedPublisherUpdateInterval(uint32_t interval);
 
-    bool connect();
+    void setSetupModeTrigger(bool (*trigger)(void));
+
+    void connect();
     void loop();
 
   private:
-    LEDManager*         led;
-    static const char*  getStatus();
+    CFGSettings         _settings;
 
     MQTTPublisher*    addPublisher(const char* topic);
     MQTTSubscriber*   addSubscriber(const char* topic);
@@ -81,14 +59,6 @@ class MQTTClient {
     MQTTPacket*       packet;
     WiFiClient*       tcpClient;
     
-    // todo !!! dangereux pas de copy des valeurs... REFACTOR !!!
-    char              brokerHost[MQTT_HOSTNAME_MAX +1];
-    uint16_t          brokerPort;
-
-    char              clientID[MQTT_CLIENTID_MAX +1];
-    char              user[MQTT_USER_MAX +1];
-    char              pass[MQTT_PASS_MAX +1];
-  
     MQTTPublisher     publishers[MAX_PUBLISHER];
     uint32_t          publisherIndex = 0;
     uint32_t          publisherCount = 0;
@@ -97,15 +67,19 @@ class MQTTClient {
     uint32_t          subscriberIndex = 0;
     uint32_t          subscriberCount = 0;
 
+    bool              (*setupModeTrigger)(void) = NULL;
+
     uint32_t          messageID = 1;
     uint16_t          getNextMessageID();
 
     void              publish(MQTTPublisher& publisher, uint32_t time );
-    void              subscribe(MQTTSubscriber& subscriber, uint32_t time); 
+    void              subscribe(MQTTSubscriber& subscriber, uint32_t time);
 
     bool              waitingPINGRESP = false;
     bool              isMQTTConnected = false;
     uint32_t          lastCnxAttemptTime = 0;
+
+    static const char*  getStatus();
 };
 
 

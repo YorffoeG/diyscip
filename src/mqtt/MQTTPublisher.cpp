@@ -39,7 +39,7 @@ bool MQTTPublisher::hasValue(uint32_t now) {
     if (uint16Getter != NULL) {
       uint16_t value = uint16Getter();
 
-      if (value != uint16Value) {
+      if ((value != 0xFFFF) && (value != uint16Value)) { // 0xFFFF = unset value
         uint16Value = value;
         itoa(value, strValue, 10);
         valueIsSet = true;

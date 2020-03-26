@@ -1,6 +1,7 @@
 #ifndef CTRLPANEL_H
 #define CTRLPANEL_H
 
+#include "CFGSettings.h"
 #include "Arduino.h"
 
 class CTRLPanel {
@@ -30,6 +31,7 @@ class CTRLPanel {
     bool      setFilterOn(bool v);
     bool      setHeaterOn(bool v);
     
+    bool      isSetupModeTriggered();
 
   private:
     static CTRLPanel*   instance;
@@ -55,9 +57,9 @@ class CTRLPanel {
     
     static volatile uint16_t  unsetDigits;
 
-    static volatile uint16_t  blinkDisplay;
-    static volatile uint16_t  blinkDelay;
-
+    static volatile uint8_t   lastTempUnit;
+    static volatile uint32_t  lastTempUnitChangeFrameCounter;
+    static volatile uint16_t  counterTempUnitChanged;
 
     CTRLPanel();
     static ICACHE_RAM_ATTR void clckRisingInterrupt();

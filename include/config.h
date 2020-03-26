@@ -24,6 +24,9 @@
 #define NTC_T25     25.0
 #define NTC_BETA    3950.0
 
+#define WIFI_STA_HOSTNAME   "diyscip"
+#define WIFI_AP_NAME        "DYISCIP_Setup"
+
 #define WIFI_SSID  "Livebox-3A80"
 #define WIFI_PWD    "E6E04FA350A7AE17E01EEC047F"
 

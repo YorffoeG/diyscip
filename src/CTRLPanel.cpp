@@ -88,7 +88,11 @@
 #define DISPLAY_ALLDIGITS         DISPLAY_DIGIT1 | DISPLAY_DIGIT2 | DISPLAY_DIGIT3 | DISPLAY_DIGIT4
 
 #define DIGITS2UINT(v)            ((((v >> 12) & 0x000F)*100) + (((v >> 8) & 0x000F)*10) + ((v >> 4) & 0x000F))
+#define DISPLAY_UNIT(v)           (v & 0x000F)
 #define NO_ERROR_ON_DISPLAY(v)    ((v & 0xF000) != 0xE000)
+
+#define DISPLAY_UNIT_F            0x000F
+#define DISPLAY_UNIT_C            0x000C
 
 #define UINT8_TRUE                0x01
 #define UINT8_FALSE               0x00
@@ -119,6 +123,9 @@
 
 #define MIN_SET_DESIRED_TEMPERATURE   20
 #define MAX_SET_DESIRED_TEMPERATURE   40
+
+#define UNITCHANGE_FRAME_COUNTER_MAX  2500
+#define UNITCHANGE_MIN                5
 
 CTRLPanel  *CTRLPanel::getInstance() {
   if (instance == NULL) {
@@ -180,7 +187,6 @@ uint8_t CTRLPanel::isHeatReached() {
 }
 
 
-
 boolean CTRLPanel::setDesiredTemperatureCelsius(uint16_t temp) {
   if ((temp >= MIN_SET_DESIRED_TEMPERATURE) && (temp <= MAX_SET_DESIRED_TEMPERATURE)) {
     if (isPowerOn()) {
@@ -229,32 +235,42 @@ boolean CTRLPanel::setHeaterOn(bool v) {
   return true;
 }
 
+boolean CTRLPanel::isSetupModeTriggered() {
+  return (counterTempUnitChanged >= UNITCHANGE_MIN) &&
+         (isPowerOn() == UINT8_FALSE);
+}
+
 /***** PRIVATE *******************************************************************************/
 CTRLPanel* CTRLPanel::instance   = NULL;
     
-volatile uint16_t CTRLPanel::frameValue = 0;
-volatile uint16_t CTRLPanel::frameShift = 0;
-volatile uint32_t CTRLPanel::frameCounter = 0;
-volatile uint32_t CTRLPanel::frameDropped  = 0;
+volatile uint16_t CTRLPanel::frameValue     = 0;
+volatile uint16_t CTRLPanel::frameShift     = 0;
+volatile uint32_t CTRLPanel::frameCounter   = 0;
+volatile uint32_t CTRLPanel::frameDropped   = 0;
     
-volatile uint16_t CTRLPanel::ledStatus     = UNSET_VALUE;
-volatile uint16_t CTRLPanel::displayValue  = UNSET_VALUE;
-volatile uint16_t CTRLPanel::waterTemp   = UNSET_VALUE;
-volatile uint16_t CTRLPanel::desiredTemp   = UNSET_VALUE;
+volatile uint16_t CTRLPanel::ledStatus      = UNSET_VALUE;
+volatile uint16_t CTRLPanel::displayValue   = UNSET_VALUE;
+volatile uint16_t CTRLPanel::waterTemp      = UNSET_VALUE;
+volatile uint16_t CTRLPanel::desiredTemp    = UNSET_VALUE;
 
 volatile uint16_t CTRLPanel::lastWaterTemp = UNSET_VALUE;
 
 volatile uint16_t CTRLPanel::unsetDigits   = DISPLAY_ALLDIGITS;
 
 volatile uint32_t CTRLPanel::lastBlackDisplayFrameCounter = 0;
-volatile bool     CTRLPanel::isDisplayBlink = false;
+volatile bool     CTRLPanel::isDisplayBlink               = false;
 
-volatile uint32_t CTRLPanel::lastWaterTempChangeFrameCounter;
-volatile uint32_t CTRLPanel::lastDesiredTempChangeFrameCounter;
-volatile uint32_t CTRLPanel::lastLedStatusChangeFrameCounter;
+volatile uint32_t CTRLPanel::lastWaterTempChangeFrameCounter    = 0;
+volatile uint32_t CTRLPanel::lastDesiredTempChangeFrameCounter  = 0;
+volatile uint32_t CTRLPanel::lastLedStatusChangeFrameCounter    = 0;
+
+volatile uint8_t  CTRLPanel::lastTempUnit                       = 0;
+volatile uint32_t CTRLPanel::lastTempUnitChangeFrameCounter     = 0;
+volatile uint16_t CTRLPanel::counterTempUnitChanged             = 0;
 
 
 CTRLPanel::CTRLPanel() {
+
   pinMode(DATA_PIN, INPUT);
   pinMode(CLCK_PIN, INPUT);
   pinMode(HOLD_PIN, INPUT);
@@ -392,6 +408,17 @@ void CTRLPanel::holdRisingInterrupt() {
                 }
               } 
             }
+
+            if (DISPLAY_UNIT(displayValue) != lastTempUnit) {
+              if ((frameCounter - lastTempUnitChangeFrameCounter) < UNITCHANGE_FRAME_COUNTER_MAX) {
+                counterTempUnitChanged++;
+              } else {
+                counterTempUnitChanged = 0;
+              }
+
+              lastTempUnitChangeFrameCounter = frameCounter;
+              lastTempUnit = DISPLAY_UNIT(displayValue);
+            }
           }
           
         }
@@ -421,14 +448,14 @@ void  CTRLPanel::pushButton(int8_t button) {
 
 
 uint16_t CTRLPanel::convertDisplayToCelsius(uint16_t displayValue) {
-/*  
-  unsigned int celsiusValue = DIGITS2UINT(displayValue);
+ 
+  uint16_t celsiusValue = DIGITS2UINT(displayValue);
 
   if ((displayValue & 0x000F) == 0x000F) { // convert °F to °C
-    celsiusValue = ((celsiusValue - 32) * 5) / 9;
+    double fValue = (double)celsiusValue;
+
+    celsiusValue = (uint16_t)round(((fValue - 32) * 5) / 9);
   } 
 
-  return celsiusValue;
-*/
-  return DIGITS2UINT(displayValue);
+  return (celsiusValue >= 20) && (celsiusValue <= 50) ? celsiusValue : UNSET_VALUE;
 }

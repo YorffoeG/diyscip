@@ -20,6 +20,33 @@ void MQTTPacket::reset(Type type, uint8_t flags) {
   length  = 0;
 }
 
+void MQTTPacket::buildConnect(const char* deviceID, const char* user, const char* pwd) {
+      
+    reset(MQTTPacket::Type::CONNECT);
+    append((const uint8_t []){0x00, 0x04, 'M', 'Q', 'T', 'T', 0x04}, 7);
+
+    uint8_t flags = MQTT_CONNECT_WILL | MQTT_CONNECT_WILL_RETAIN | MQTT_CONNECT_WILL_QOS1 | MQTT_CONNECT_CLEANSESSION;
+    if ((user != NULL) && (*user != '\0')) {
+      flags |= MQTT_CONNECT_USER;
+      if ((pwd != NULL) && (*pwd != '\0')) {
+        flags |= MQTT_CONNECT_PASS;
+      }
+    }
+    append(flags);
+    append((uint16_t)MQTT_KEEPALIVE);
+    append(deviceID);
+    
+    append(MQTT_CONNECT_WILL_TOPIC);
+    append(MQTT_CONNECT_WILL_MESSAGE);    
+    
+    if ((user != NULL) && (*user != '\0')) {
+      append(user);
+      if ((pwd != NULL) && (*pwd != '\0')) {
+        append(pwd);
+      }
+    }
+}
+
 size_t MQTTPacket::getLength() {
   return (length == 0) ? index : length;
 }
