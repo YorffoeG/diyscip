@@ -74,7 +74,7 @@
 #define FRAME_LED_POWER           0x0001
 #define FRAME_LED_BUBBLE          0x0400
 #define FRAME_LED_FILTER          0x1000
-#define FRAME_LED_HEATER          0x0000
+#define FRAME_LED_HEATER          0x0080
 #define FRAME_LED_HEATREACHED     0x0200
 
 #define FRAME_BEEP_BIT            0x0100
