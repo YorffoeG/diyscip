@@ -179,7 +179,7 @@ uint8_t CTRLPanel::isBubbleOn() {
 }
 
 uint8_t CTRLPanel::isHeaterOn() {
-  return (ledStatus != UNSET_VALUE) ? ((ledStatus & FRAME_LED_HEATER) ? UINT8_TRUE : UINT8_FALSE) : UNSET_VALUEUINT8;
+  return (ledStatus != UNSET_VALUE) ? ((ledStatus & (FRAME_LED_HEATER | FRAME_LED_HEATREACHED)) ? UINT8_TRUE : UINT8_FALSE) : UNSET_VALUEUINT8;
 }
 
 uint8_t CTRLPanel::isHeatReached() {
