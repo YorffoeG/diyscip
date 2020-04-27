@@ -27,13 +27,4 @@
 #define WIFI_STA_HOSTNAME   "diyscip"
 #define WIFI_AP_NAME        "DYISCIP_Setup"
 
-#define WIFI_SSID  "Livebox-3A80"
-#define WIFI_PWD    "E6E04FA350A7AE17E01EEC047F"
-
-#define MQTT_HOST   "192.168.1.9"
-#define MQTT_PORT   8080
-
-#define MQTT_CLIENTID   "IzKDjF0ucOLjhBUTPxee"
-
-
 #endif // CONFIG_H

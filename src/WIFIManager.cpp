@@ -1,8 +1,17 @@
-/* 
- * Inspired by
- * https://github.com/tzapu/WiFiManager
+/**
+ * DIYSCIP (c) by Geoffroy HUBERT - yorffoeg@gmail.com
+ * This file is part of DIYSCIP <https://github.com/yorffoeg/diyscip>.
  * 
- */
+ * DIYSCIP is licensed under a
+ * Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
+ * 
+ * You should have received a copy of the license along with this
+ * work. If not, see <http://creativecommons.org/licenses/by-nc-sa/4.0/>.
+ * 
+ * DIYSCIP is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY;
+ */ 
+
 
 #include "WIFIManager.h"
 #include "lwip/dns.h"
@@ -119,8 +128,6 @@ bool WIFIManager::isSTAConnected() {
 
 
 void WIFIManager::handleRoot() {
-  DBG("HTTP Request /");
-  
   if (!redirect()) {
 
     _httpServer->sendHeader("Content-Encoding", String("gzip"));
@@ -129,7 +136,6 @@ void WIFIManager::handleRoot() {
 }
 
 void WIFIManager::handleGetSettings() {
-  DBG("HTTP Request GET /settings");
 
   if (_setupModeTime != 0) {
     _setupModeTime = millis();
@@ -176,7 +182,6 @@ void WIFIManager::handleGetSettings() {
 }
 
 void WIFIManager::handlePostSettings() {
-  DBG("HTTP Request POST /settings");
 
   if (!IS_CHECK_PENDING(_checkCode)) {
     if (_httpServer->hasArg("plain")) {
@@ -204,7 +209,6 @@ void WIFIManager::handlePostSettings() {
 }
 
 void WIFIManager::handleGetChecks() {
-  DBG("HTTP Request GET /status");
 
   if (_setupModeTime != 0) {
     _setupModeTime = millis();
@@ -218,7 +222,6 @@ void WIFIManager::handleGetChecks() {
 }
 
 void WIFIManager::handlePostSave() {
-  DBG("HTTP Request POST /save");
 
   if (_checkCode == CHECK_MQTT) {
 
@@ -248,8 +251,7 @@ bool WIFIManager::redirect() {
   const String host = _httpServer->hostHeader();
   
   if ((host != "") && host.compareTo(_ip)) {
-    DBG("Redirect requested host %s to %s", host.c_str(), _ip.c_str());
-    
+
     _httpServer->sendHeader("Location", String("http://") + _ip, true);
     _httpServer->send ( 302, "text/plain", ""); 
     _httpServer->client().stop();
