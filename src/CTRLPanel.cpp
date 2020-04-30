@@ -470,5 +470,5 @@ uint16_t CTRLPanel::convertDisplayToCelsius(uint16_t displayValue) {
     celsiusValue = (uint16_t)round(((fValue - 32) * 5) / 9);
   } 
 
-  return (celsiusValue >= 20) && (celsiusValue <= 50) ? celsiusValue : UNSET_VALUE;
+  return (celsiusValue >= 0) && (celsiusValue <= 60) ? celsiusValue : UNSET_VALUE;
 }
