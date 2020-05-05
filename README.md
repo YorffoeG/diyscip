@@ -18,7 +18,7 @@ It connects to your WiFi network and communicate to a MQTT server for control (M
 ### How to build it ?
 You need first the hardware ! Components are easy to find but still, it need some skills to build it.
 
-The main part is a NodeMcu V3, based on the esp8266. I used [this one](https://www.amazon.fr/dp/B06Y1ZPNMS) for prototyping. Using a NodeMcu development board rather than a simple ESP8266 chip is for convinient: it's include a 5V (from SPA) to 3.3v converter and mainly it offers a USB connection for upload and debug software. Electronic schematic is here with components list.
+The main part is a NodeMcu V3, based on the esp8266. I used [this one](https://www.amazon.fr/dp/B06Y1ZPNMS) for prototyping. Using a NodeMcu development board rather than a simple ESP8266 chip is for convinient: it's include a 5V (from SPA) to 3.3v converter and mainly it offers a USB connection for upload and debug software. Electronic schematic is [here](https://github.com/YorffoeG/diyscip/blob/master/docs/schematic.jpg).
 
 As an IDE, i use [Visual Studio Code](https://code.visualstudio.com/) with [PlatformIO](https://platformio.org/): Free and in my opinion, it offers a better usability for source management.
 
