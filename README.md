@@ -36,7 +36,7 @@ To re-enter in setup mode, when your spa is powered on, press the temperature un
 
 
 ### Middleware and Frontend PWA App
-I've also developped the middleware server and a frontend Progressive Web App for your spa ! For now it's not publicly open (it's has cost to host it on cloud...) but contact me if you want your controller to be registered in this app: _diyscip(AT)runrunweb.net_
+I've also developped the middleware server and a frontend Progressive Web App for your spa ! For now it's not publicly open but email me if you want your controller to be registered in this app: _diyscip(AT)runrunweb.net_
 You can also take a free demo tour : https://diyscip.web.app
 
 ![image](https://github.com/YorffoeG/diyscip/blob/master/docs/frontend_app.jpg)
