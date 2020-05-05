@@ -39,8 +39,7 @@ To re-enter in setup mode, when your spa is powered on, press the temperature un
 I've also developped the middleware server and a frontend Progressive Web App for your spa ! For now it's not publicly open (it's has cost to host it on cloud...) but contact me if you want your controller to be registered in this app: _diyscip(AT)runrunweb.net_
 You can also take a free demo tour : https://diyscip.web.app
 
-![image](https://github.com/YorffoeG/diyscip/blob/master/docs/frontend_1.jpg)
-![image](https://github.com/YorffoeG/diyscip/blob/master/docs/frontend_2.jpg)
+![image](https://github.com/YorffoeG/diyscip/blob/master/docs/frontend_app.jpg)
 
 ### Behind the code
 Based on reverse engineering of control panel electronics, 3 wires provide a clock, a data and a hold signal to two 8 bit shift registers in serial (74HC595). The outputs of those registers enable or not the leds (including those of the 7-digits displays). Each buttons are also connected to a register output. When it's pressed the corresponding output register is connected with data signal through a 1kOhm resistor.
