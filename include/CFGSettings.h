@@ -17,13 +17,15 @@
 
 #include <stdint.h>
 
-#define SSID_LEN_MAX        31
-#define PSK_LEN_MAX         63
-#define HOST_LEN_MAX        126
-#define PORT_LEN_MAX        5
-#define DEVICEID_LEN_MAX    63
-#define USER_LEN_MAX        63
-#define PWD_LEN_MAX         63
+#define SSID_LEN_MAX            31
+#define PSK_LEN_MAX             63
+#define HOST_LEN_MAX            126
+#define PORT_LEN_MAX            5
+#define DEVICEID_LEN_MAX        63
+#define USER_LEN_MAX            63
+#define PWD_LEN_MAX             63
+#define UPDATE_LEN_MAX          2
+
 
 class CFGSettings {
 
@@ -55,6 +57,7 @@ public:
     const char* getDeviceID();
     const char* getBrokerUser();
     const char* getBrokerPwd();
+    bool        isUpdateEnabled();
 
 private:
     uint16_t    nextEEPROMField(char* field, uint16_t max_len);
@@ -72,6 +75,7 @@ private:
     char        _deviceID[DEVICEID_LEN_MAX+1]   = {0};
     char        _user[USER_LEN_MAX+1]           = {0};
     char        _pwd[PWD_LEN_MAX+1]             = {0};
+    char        _update[UPDATE_LEN_MAX+1]       = {0};
 
 };
 

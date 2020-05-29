@@ -56,6 +56,20 @@ WIFIManager::WIFIManager(CFGSettings& settings) :
 
 }
 
+uint16_t WIFIManager::getWifiQuality() {
+  int dBm = WiFi.RSSI();
+
+  if (dBm <= -100) {
+    return 0;
+  }
+
+  if (dBm >= -50) {
+    return 100;
+  }
+
+  return 2 * (dBm + 100);
+}
+
 void WIFIManager::setup() {
   if (_settings.getMode() != CFGSettings::RUNNING) { // start AP
 
@@ -153,7 +167,7 @@ void WIFIManager::handleGetSettings() {
       json += "{\"ssid\":\"";
       json += WiFi.SSID(i);
       json += "\", \"rssi\":\"";
-      json += ""; //WiFi.RSSI(i);
+      json += WiFi.RSSI(i); //""; //WiFi.RSSI(i);
       json += "\",\"secure\":";
       json += (WiFi.encryptionType(i) != ENC_TYPE_NONE) ? "true" : "false";
       json += "}";      
@@ -174,6 +188,8 @@ void WIFIManager::handleGetSettings() {
   json += _settings.getBrokerUser();
   json += "\",\"pwd\":\"";
   json += _settings.getBrokerPwd();
+  json += "\",\"update\":\"";
+  json += _settings.isUpdateEnabled() ? '1' : '0';
   json += "\",\"check\":\"";
   json += _checkCode;
   json += "\"}";

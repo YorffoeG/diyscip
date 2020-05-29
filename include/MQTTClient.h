@@ -25,7 +25,7 @@
 #include <ESP8266WiFi.h>
 
 #define MAX_PUBLISHER       10
-#define MAX_SUBSCRIBER      5
+#define MAX_SUBSCRIBER      6
 
 #define MQTT_HOSTNAME_MAX   HOST_LEN_MAX
 #define MQTT_CLIENTID_MAX   DEVICEID_LEN_MAX
@@ -56,6 +56,7 @@ class MQTTClient {
     
     void addSubscriber(const char* topic, bool (*setter)(uint16_t set));
     void addSubscriber(const char* topic, bool (*setter)(bool set));
+    void addSubscriber(const char* topic, bool (*setter)(const char* set));
 
     void setLastAddedPublisherUpdateInterval(uint32_t interval);
 
@@ -63,6 +64,8 @@ class MQTTClient {
 
     void connect();
     void loop();
+
+    void publish(const char* topic, const char* payload);
 
   private:
     CFGSettings         _settings;
@@ -92,8 +95,6 @@ class MQTTClient {
     bool              waitingPINGRESP = false;
     bool              isMQTTConnected = false;
     uint32_t          lastCnxAttemptTime = 0;
-
-    static const char*  getStatus();
 };
 
 

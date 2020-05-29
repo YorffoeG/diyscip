@@ -29,6 +29,7 @@
 #define MQTT_CONNECT_CLEANSESSION     0x02
 
 #define MQTT_PUBLISH_DUP              0x08
+#define MQTT_PUBLISH_QOS0             0x00
 #define MQTT_PUBLISH_QOS1             0x02
 #define MQTT_PUBLISH_QOS2             0x04
 #define MQTT_PUBLISH_RETAIN           0x01

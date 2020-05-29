@@ -27,7 +27,7 @@
         color: rgba(0, 0, 0, 0.42);
       }
 
-      input {
+      input:not([type='checkbox']) {
         font-size: 1em;
         border: none;
         border-bottom: 1px solid rgba(0, 0, 0, 0.42);
@@ -353,6 +353,10 @@
         <label for="pwd">Password</label>
         <button class="hide"></button>
       </div>
+      <div class="input-field">
+        <input id="update" type="checkbox" />
+        <label for="update">Enable firmware update</label>
+      </div>
       <button id="check">APPLY SETTINGS</button>
     </div>
     <div id="checking" class="hidden">
@@ -387,6 +391,7 @@
             deviceid   = document.getElementById('deviceid'),
             user       = document.getElementById('user'),
             pwd        = document.getElementById('pwd'),
+            update     = document.getElementById('update'),
             checks     = document.querySelectorAll('.check'),
             explerr    = document.getElementById('explerr');
 
@@ -453,7 +458,8 @@
           datas += port.value     + '\n';
           datas += deviceid.value + '\n';
           datas += user.value     + '\n';
-          datas += pwd.value      + '\n'
+          datas += pwd.value      + '\n';
+          datas += (update.checked ? '1' : '0') + '\n';
           datas += 'EOD';
 
           xhr.onload = () => {
@@ -695,6 +701,7 @@
               deviceid.value= datas.deviceid;
               user.value    = datas.user;
               pwd.value     = datas.pwd;
+              update.checked= datas.update !== '0';
 
               if (ssid.selectedIndex < 0) {
                 ssid.selectedIndex = 0;

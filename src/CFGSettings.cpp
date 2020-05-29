@@ -57,7 +57,7 @@ CFGSettings::CFGSettings() {
         this->_mode = MODE::UNKNOWN;
     }
 
-    uint16_t len = INIT_SEQUENCE_MAX + 3;       // 3 = datalen(uint16) + initCode(uint8)
+    uint16_t len = INIT_SEQUENCE_MAX + 3;       // 3 = datalen(uint16) + mode(uint8)
     this->_currentEEPROMAddress = DATA_ADDRESS; 
 
     len += this->nextEEPROMField(this->_ssid,       SSID_LEN_MAX);
@@ -67,6 +67,7 @@ CFGSettings::CFGSettings() {
     len += this->nextEEPROMField(this->_deviceID,   DEVICEID_LEN_MAX);
     len += this->nextEEPROMField(this->_user,       USER_LEN_MAX);
     len += this->nextEEPROMField(this->_pwd,        PWD_LEN_MAX);
+    len += this->nextEEPROMField(this->_update,     UPDATE_LEN_MAX);
 }
 
 CFGSettings::MODE CFGSettings::getMode() {
@@ -100,6 +101,7 @@ bool CFGSettings::readHTTPPOST(const char* data) {
     data = this->nextHTTPField(data, this->_deviceID, DEVICEID_LEN_MAX);
     data = this->nextHTTPField(data, this->_user,   USER_LEN_MAX);
     data = this->nextHTTPField(data, this->_pwd,    PWD_LEN_MAX);
+    data = this->nextHTTPField(data, this->_update, UPDATE_LEN_MAX);
 
     return !strcmp(data, "EOD");
 }
@@ -121,6 +123,7 @@ bool CFGSettings::save() {
     len += this->writeField(this->_deviceID);
     len += this->writeField(this->_user);
     len += this->writeField(this->_pwd);
+    len += this->writeField(this->_update);
 
     if (this->_currentEEPROMAddress < EEPROM_SIZE) {
 
@@ -176,6 +179,10 @@ const char* CFGSettings::getBrokerUser() {
 
 const char* CFGSettings::getBrokerPwd() {
     return this->_pwd;
+}
+
+bool CFGSettings::isUpdateEnabled() {
+    return *(this->_update) != '0';
 }
 
 

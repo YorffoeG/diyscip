@@ -24,6 +24,9 @@ void MQTTSubscriber::setSetter(bool  (*setter)(bool)) {
   boolSetter = setter;
 }
 
+void MQTTSubscriber::setSetter(bool (*setter)(const char*)) {
+  strSetter = setter;
+}
 
 bool MQTTSubscriber::setValue(const char* value) {
   if (boolSetter != NULL) {
@@ -56,6 +59,10 @@ bool MQTTSubscriber::setValue(const char* value) {
       return uint16Setter(uint16Value);
 
     } // else empty string    
+  } else if (strSetter != NULL) {
+
+    return strSetter(value);
+
   }
   return false;
 }

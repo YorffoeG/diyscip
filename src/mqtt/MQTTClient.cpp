@@ -13,6 +13,7 @@
  */ 
 
 #include "MQTTClient.h"
+#include "Version.h"
 #include "Debug.h"
 
 #include "Arduino.h"
@@ -29,9 +30,6 @@
 MQTTClient::MQTTClient(CFGSettings &settings) : _settings(settings) {
   tcpClient = new WiFiClient();
   packet    = new MQTTPacket(tcpClient);
-
-  addPublisher("/spa/status", MQTTClient::getStatus);
-  setLastAddedPublisherUpdateInterval(UPDATE_ONCE_AT_BOOT);
 }
 
 void MQTTClient::connect() {
@@ -92,6 +90,14 @@ void MQTTClient::addSubscriber(const char* topic, bool (*setter)(bool set)) {
   }  
 }
 
+void MQTTClient::addSubscriber(const char* topic, bool (*setter)(const char* set)) {
+  MQTTSubscriber* subscriber = addSubscriber(topic);
+
+  if (subscriber != NULL) {
+    subscriber->setSetter(setter);
+  }  
+}
+
 void MQTTClient::setLastAddedPublisherUpdateInterval(uint32_t interval) {
   if (publisherCount > 0) {
     publishers[publisherCount-1].setUpdateInterval(interval);    
@@ -100,6 +106,16 @@ void MQTTClient::setLastAddedPublisherUpdateInterval(uint32_t interval) {
 
 void MQTTClient::setSetupModeTrigger(bool (*trigger)(void)) {
   setupModeTrigger = trigger;
+}
+
+void MQTTClient::publish(const char* topic, const char* payload) {
+
+  packet->reset(MQTTPacket::Type::PUBLISH, MQTT_PUBLISH_QOS0 | MQTT_PUBLISH_RETAIN);
+  packet->append(topic);
+  
+  packet->appendPayload(payload);
+
+  packet->send();
 }
 
 void MQTTClient::loop() {
@@ -140,6 +156,10 @@ void MQTTClient::loop() {
             }
 
             isMQTTConnected = true;
+
+            this->publish("/spa/status", "online");
+            this->publish("/spa/sys/version", FW_VERSION);
+            this->publish("/spa/sys/updatable", _settings.isUpdateEnabled() ? "true" : "false");
 
             return ;
 
@@ -321,10 +341,6 @@ void MQTTClient::loop() {
 }
 
 /***** PRIVATE ********************************/
-const char*  MQTTClient::getStatus() {
-  return "online";  
-}
-
 
 uint16_t MQTTClient::getNextMessageID() {
   messageID ++;

@@ -24,12 +24,14 @@ class MQTTSubscriber : public MQTTTopic {
   public:
     void        setSetter(bool  (*setter)(uint16_t));
     void        setSetter(bool  (*setter)(bool));
+    void        setSetter(bool  (*setter)(const char*));
 
     bool        setValue(const char* value);
 
   private:
     bool        (*uint16Setter)(uint16_t) = NULL;
     bool        (*boolSetter)(bool)       = NULL;
+    bool        (*strSetter)(const char*) = NULL;
 };
 
 

@@ -21,6 +21,7 @@
 #include "WIFIManager.h"
 #include "TEMPSensor.h"
 #include "LEDManager.h"
+#include "OTAUpdate.h"
 #include "Debug.h"
 #include "config.h"
 
@@ -88,6 +89,12 @@ void setup() {
     mqttClient = new MQTTClient(cfgSettings);
     mqttClient->connect();
 
+    mqttClient->addPublisher("/spa/sys/wifi",           []() -> uint16_t { return WIFIManager::getWifiQuality(); });
+    mqttClient->setLastAddedPublisherUpdateInterval(WIFIQUALITY_UPDATE_INTERVAL);
+
+    mqttClient->addPublisher("/spa/temp/board",         []() -> uint16_t { return tempSensor->getAverageTemperatureCelsius(); });
+    mqttClient->setLastAddedPublisherUpdateInterval(TEMP_UPDATE_INTERVAL);
+
     mqttClient->addPublisher("/spa/temp/water",         []() -> uint16_t { return controlPanel->getWaterTemperatureCelsius(); });
     mqttClient->addPublisher("/spa/temp/desired",       []() -> uint16_t { return controlPanel->getDesiredTemperatureCelsius(); });
     mqttClient->addPublisher("/spa/state/power",        []() -> uint8_t  { return controlPanel->isPowerOn(); });
@@ -102,8 +109,9 @@ void setup() {
     mqttClient->addSubscriber("/spa/state/filter/set",  [](bool v) -> bool { return controlPanel->setFilterOn(v); });
     mqttClient->addSubscriber("/spa/state/heater/set",  [](bool v) -> bool { return controlPanel->setHeaterOn(v); });
 
-    mqttClient->addPublisher("/spa/temp/board",         []() -> uint16_t { return tempSensor->getAverageTemperatureCelsius(); });
-    mqttClient->setLastAddedPublisherUpdateInterval(TEMP_UPDATE_INTERVAL);
+    if (cfgSettings.isUpdateEnabled()) {
+      mqttClient->addSubscriber("/spa/sys/fw/update",   [](const char* v) -> bool { return OTAUpdate::fwImageURL(v, mqttClient); });
+    }
 
     mqttClient->setSetupModeTrigger([]() -> bool { return controlPanel->isSetupModeTriggered(); });
 

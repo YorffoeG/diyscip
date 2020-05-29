@@ -22,6 +22,8 @@
 #include "CFGSettings.h"
 #include "MQTTClient.h"
 
+#define WIFIQUALITY_UPDATE_INTERVAL 5000000
+
 class WIFIManager {
 
   public:
@@ -32,6 +34,8 @@ class WIFIManager {
 
     bool isSTA();
     bool isSTAConnected();
+
+    static uint16_t getWifiQuality();
 
   private:
     enum MODE {
