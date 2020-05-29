@@ -44,10 +44,12 @@
 #define IS_CHECK_FAILED(code)    (code & CHECK_ERROR)
 #define IS_CHECK_PENDING(code)   (code & CHECK_PENDING)
 
+#define JSON_ESCAPED_MAX  HOST_LEN_MAX
 
 void check_dns_found_callback(const char *name, CONST ip_addr_t *ipaddr, void *callback_arg);
 
 const char* mime_json = "application/json; charset=UTF-8";
+
 
 
 WIFIManager::WIFIManager(CFGSettings& settings) :
@@ -156,6 +158,7 @@ void WIFIManager::handleGetSettings() {
   }
 
   String   json("{\"wifis\":[");
+  char     jsonEscaped[JSON_ESCAPED_MAX +1];
   int      nbWifis = WiFi.scanNetworks();
 
   if (nbWifis > 0) {
@@ -165,9 +168,10 @@ void WIFIManager::handleGetSettings() {
       }
 
       json += "{\"ssid\":\"";
-      json += WiFi.SSID(i);
+      jsonEscapeString(WiFi.SSID(i).c_str(), jsonEscaped, JSON_ESCAPED_MAX);
+      json += jsonEscaped;
       json += "\", \"rssi\":\"";
-      json += WiFi.RSSI(i); //""; //WiFi.RSSI(i);
+      json += WiFi.RSSI(i);
       json += "\",\"secure\":";
       json += (WiFi.encryptionType(i) != ENC_TYPE_NONE) ? "true" : "false";
       json += "}";      
@@ -175,19 +179,25 @@ void WIFIManager::handleGetSettings() {
   }
 
   json += "],\"ssid\":\"";
-  json += _settings.getSSID();
+  jsonEscapeString(_settings.getSSID(), jsonEscaped, JSON_ESCAPED_MAX);
+  json += jsonEscaped;
   json += "\",\"wifipwd\":\"";
-  json += _settings.getPSK();
+  jsonEscapeString(_settings.getPSK(), jsonEscaped, JSON_ESCAPED_MAX);
+  json += jsonEscaped;
   json += "\",\"host\":\"";
-  json += _settings.getBrokerHost();
+  jsonEscapeString(_settings.getBrokerHost(), jsonEscaped, JSON_ESCAPED_MAX);
+  json += jsonEscaped;
   json += "\",\"port\":";
   json += _settings.getBrokerPort();
   json += ",\"deviceid\":\"";
-  json += _settings.getDeviceID();
+  jsonEscapeString(_settings.getDeviceID(), jsonEscaped, JSON_ESCAPED_MAX);
+  json += jsonEscaped;
   json += "\",\"user\":\"";
-  json += _settings.getBrokerUser();
+  jsonEscapeString(_settings.getBrokerUser(), jsonEscaped, JSON_ESCAPED_MAX);
+  json += jsonEscaped;
   json += "\",\"pwd\":\"";
-  json += _settings.getBrokerPwd();
+  jsonEscapeString(_settings.getBrokerPwd(), jsonEscaped, JSON_ESCAPED_MAX);
+  json += jsonEscaped;
   json += "\",\"update\":\"";
   json += _settings.isUpdateEnabled() ? '1' : '0';
   json += "\",\"check\":\"";
@@ -392,6 +402,67 @@ void WIFIManager::checks() {
   }
 }
 
+uint16_t WIFIManager::jsonEscapeString(const char* str, char* jsonStr, uint16_t max_len) {
+  int i = 0;
+
+  while ((*str != '\0') && (i < max_len)) {
+    switch (*str) {
+      case '"':
+      case '\\':
+      case '/':
+        if ((i+1) < max_len) {
+          jsonStr[i++] = '\\';
+          jsonStr[i]   = *str;
+        }
+        break;
+
+      case '\b':
+        if ((i+1) < max_len) {
+          jsonStr[i++] = '\\';
+          jsonStr[i]   = 'b';
+        }
+        break;
+
+      case '\f':
+        if ((i+1) < max_len) {
+          jsonStr[i++] = '\\';
+          jsonStr[i]   = 'f';
+        }
+        break;
+
+      case '\n':
+        if ((i+1) < max_len) {
+          jsonStr[i++] = '\\';
+          jsonStr[i]   = 'n';
+        }
+        break;
+
+      case '\r':
+        if ((i+1) < max_len) {
+          jsonStr[i++] = '\\';
+          jsonStr[i]   = 'r';
+        }
+        break;
+
+      case '\t':
+        if ((i+1) < max_len) {
+          jsonStr[i++] = '\\';
+          jsonStr[i]   = 't';
+        }
+        break;
+
+      default:
+        jsonStr[i] = *str;
+
+    }
+
+    str++;
+    i++;
+  }
+
+  jsonStr[i] = '\0';
+  return i;
+}
 
 
 void check_dns_found_callback(const char *name, CONST ip_addr_t *ipaddr, void *callback_arg)

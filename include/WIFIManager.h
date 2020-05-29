@@ -71,6 +71,8 @@ class WIFIManager {
     bool redirect();
 
     void checks();
+
+    uint16_t jsonEscapeString(const char* str, char* jsonStr, uint16_t max_len);
 };
 
 
