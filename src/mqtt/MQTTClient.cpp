@@ -19,6 +19,10 @@
 #include "Arduino.h"
 
 #define MQTT_CONNECTION_TIMELAPSE     10000 // in ms
+
+#define BACKOFF_TIMEOUT_MAX           32000 // in ms
+#define BACKOFF_RANDOM_DELAY          2000 // in ms
+
 #define MQTT_ACK_TIMEOUT              15000 // interval to receive ack to subscribe/publish in ms
 
 #define MQTT_KEEPALIVE_MS_THRESHOLD   (MQTT_KEEPALIVE * 800)  // in ms
@@ -36,8 +40,7 @@ void MQTTClient::connect() {
 
   DBG("MQTT: TCP trying to connect to %s:%d", _settings.getBrokerHost(), _settings.getBrokerPort());
 
-  this->isMQTTConnected     = false;
-  this->lastCnxAttemptTime  = millis();
+  this->isMQTTConnected = false;
     
   if (tcpClient->connect(_settings.getBrokerHost(), _settings.getBrokerPort())) {
     DBG("MQTT: TCP connected");
@@ -145,6 +148,7 @@ void MQTTClient::loop() {
 
             DBG("MQTT> CONNACK");
 
+            resetBackoffTimeout(now);
             waitingPINGRESP = false;
 
             // reset Publishers/Subscribers
@@ -171,7 +175,7 @@ void MQTTClient::loop() {
 
       } else {
 
-        if ((now - lastCnxAttemptTime) > MQTT_CONNECTION_TIMELAPSE) {
+        if (isBackoffTimeout(now)) {
           connect();
         }
       }
@@ -418,4 +422,22 @@ MQTTSubscriber* MQTTClient::addSubscriber(const char* topic) {
   } else { DBG("MQTT: too many subscriber"); }
 
   return NULL;
+}
+
+bool MQTTClient::isBackoffTimeout(uint32_t ms) {
+  if (ms > (lastCnxTry + backoffWait)) {
+    if (backoffWait < BACKOFF_TIMEOUT_MAX) {
+        backoffWait += random(BACKOFF_RANDOM_DELAY);
+    }
+    lastCnxTry = ms;
+    return true;
+
+  } else {
+    return false;
+  }
+}
+
+void MQTTClient::resetBackoffTimeout(uint32_t ms) {
+  lastCnxTry  = ms;
+  backoffWait = 0;
 }

@@ -92,9 +92,13 @@ class MQTTClient {
     void              publish(MQTTPublisher& publisher, uint32_t time );
     void              subscribe(MQTTSubscriber& subscriber, uint32_t time);
 
+    bool              isBackoffTimeout(uint32_t ms);
+    void              resetBackoffTimeout(uint32_t ms);
+
     bool              waitingPINGRESP = false;
     bool              isMQTTConnected = false;
-    uint32_t          lastCnxAttemptTime = 0;
+    uint32_t          lastCnxTry      = 0;
+    uint32_t          backoffWait     = 0;
 };
 
 
