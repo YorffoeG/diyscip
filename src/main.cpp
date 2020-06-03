@@ -110,7 +110,7 @@ void setup() {
     mqttClient->addSubscriber("/spa/state/heater/set",  [](bool v) -> bool { return controlPanel->setHeaterOn(v); });
 
     if (cfgSettings.isUpdateEnabled()) {
-      mqttClient->addSubscriber("/spa/sys/fw/update",   [](const char* v) -> bool { return OTAUpdate::fwImageURL(v, mqttClient); });
+      mqttClient->addSubscriber("/spa/sys/update",   [](const char* v) -> bool { return OTAUpdate::fwImageURL(v, mqttClient); });
     }
 
     mqttClient->setSetupModeTrigger([]() -> bool { return controlPanel->isSetupModeTriggered(); });
