@@ -26,7 +26,7 @@ bool OTAUpdate::fwImageURL(const char* url, MQTTClient* mqttClient) {
     if (ret == HTTP_UPDATE_FAILED) {
         DBG("OTAUpdate Error %d: %s", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
 
-        mqttClient->publish("/spa/sys/update/error",  ESPhttpUpdate.getLastErrorString().c_str());
+        mqttClient->publish("spa/sys/update/error",  ESPhttpUpdate.getLastErrorString().c_str());
 
         return false;
 

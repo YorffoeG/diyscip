@@ -161,9 +161,9 @@ void MQTTClient::loop() {
 
             isMQTTConnected = true;
 
-            this->publish("/spa/status", "online");
-            this->publish("/spa/sys/version", FW_VERSION);
-            this->publish("/spa/sys/updatable", _settings.isUpdateEnabled() ? "true" : "false");
+            this->publish("spa/status", "online");
+            this->publish("spa/sys/version", FW_VERSION);
+            this->publish("spa/sys/updatable", _settings.isUpdateEnabled() ? "true" : "false");
 
             return ;
 

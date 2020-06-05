@@ -65,19 +65,19 @@ Enfin, un client MQTT envoie et reçoit les états et les commandes depuis un se
 Le controlleur embarque un client MQTT qui utilise le protocole v3.1.1
 
 Publish Topics:
-- **/spa/status** :  online | offline (Will topic)
-- **/spa/state** : number - value brute des états des leds, utile pour le debug.
-- **/spa/state/power**  :  true | false
-- **/spa/state/filter** : true | false
-- **/spa/state/heater** : true | false
-- **/spa/state/heatreached** : true | false (true si la température est atteinte)
-- **/spa/state/bubble** : true | false
-- **/spa/temp/board** : number - in Celsius degree
-- **/spa/temp/water** : number - in Celsius degree
-- **/spa/temp/desired** : number - in Celsius degree
+- **spa/status** :  online | offline (Will topic)
+- **spa/state** : number - value brute des états des leds, utile pour le debug.
+- **spa/state/power**  :  true | false
+- **spa/state/filter** : true | false
+- **spa/state/heater** : true | false
+- **spa/state/heatreached** : true | false (true si la température est atteinte)
+- **spa/state/bubble** : true | false
+- **spa/temp/board** : number - in Celsius degree
+- **spa/temp/water** : number - in Celsius degree
+- **spa/temp/desired** : number - in Celsius degree
 
 Subscribe Topics:
-- **/spa/state/power/set** : true | false
-- **/spa/state/filter/set** : true | false
-- **/spa/state/heater/set** : true | false
-- **/spa/state/temp/desired/set** : number - in Celsius degree
+- **spa/state/power/set** : true | false
+- **spa/state/filter/set** : true | false
+- **spa/state/heater/set** : true | false
+- **spa/state/temp/desired/set** : number - in Celsius degree

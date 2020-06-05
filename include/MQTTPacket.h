@@ -38,7 +38,7 @@
 #define MQTT_SUBSCRIBE_QOS            0x01
 #define MQTT_SUBACK_FAILURE           0x80                  
 
-#define MQTT_CONNECT_WILL_TOPIC       "/spa/status"
+#define MQTT_CONNECT_WILL_TOPIC       "spa/status"
 #define MQTT_CONNECT_WILL_MESSAGE     "offline"
 
 #define MQTT_MAX_PACKET_SIZE  127

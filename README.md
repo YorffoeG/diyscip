@@ -62,19 +62,19 @@ At last, a MQTT client send and receive control/command from a MQTT server throu
 The controller embedded MQTT client uses protocol v3.1.1.
 
 Publish Topics:
-- **/spa/status** :  online | offline (Will topic)
-- **/spa/state** : number - raw state value, a bit per control, for debug mainly.
-- **/spa/state/power**  :  true | false
-- **/spa/state/filter** : true | false
-- **/spa/state/heater** : true | false
-- **/spa/state/heatreached** : true | false (true if heat is reached)
-- **/spa/state/bubble** : true | false
-- **/spa/temp/board** : number - in Celsius degree
-- **/spa/temp/water** : number - in Celsius degree
-- **/spa/temp/desired** : number - in Celsius degree
+- **spa/status** :  online | offline (Will topic)
+- **spa/state** : number - raw state value, a bit per control, for debug mainly.
+- **spa/state/power**  :  true | false
+- **spa/state/filter** : true | false
+- **spa/state/heater** : true | false
+- **spa/state/heatreached** : true | false (true if heat is reached)
+- **spa/state/bubble** : true | false
+- **spa/temp/board** : number - in Celsius degree
+- **spa/temp/water** : number - in Celsius degree
+- **spa/temp/desired** : number - in Celsius degree
 
 Subscribe Topics:
-- **/spa/state/power/set** : true | false
-- **/spa/state/filter/set** : true | false
-- **/spa/state/heater/set** : true | false
-- **/spa/state/temp/desired/set** : number - in Celsius degree
+- **spa/state/power/set** : true | false
+- **spa/state/filter/set** : true | false
+- **spa/state/heater/set** : true | false
+- **spa/state/temp/desired/set** : number - in Celsius degree
