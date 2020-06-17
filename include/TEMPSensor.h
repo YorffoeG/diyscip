@@ -26,11 +26,11 @@ class TEMPSensor {
         static TEMPSensor*  getInstance();
 
         uint16_t  getAverageTemperatureCelsius();
-        uint16_t  getInstantTemperatureCelsius();
 
     private:
         static TEMPSensor*  instance;
-        uint16_t            samples[TEMP_SAMPLE_MAX] = {};
+        bool                initialized = false;
+        double              samples[TEMP_SAMPLE_MAX] = {};
         uint16_t            sampleIndex = 0;
 
         TEMPSensor();

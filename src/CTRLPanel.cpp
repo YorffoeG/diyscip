@@ -124,12 +124,27 @@
 #define COMMAND_ADDRESS_S2        0x02
 #define COMMAND_ADDRESS_S3        0x03
 #define COMMAND_ADDRESS_S4        0x04
+#define COMMAND_ADDRESS_S5        0x05
+#define COMMAND_ADDRESS_S6        0x06
+#define COMMAND_ADDRESS_S7        0x07
 
-#define BUTTON_POWER              COMMAND_ADDRESS_S0
-#define BUTTON_TEMPUP             COMMAND_ADDRESS_S1
-#define BUTTON_TEMPDOWN           COMMAND_ADDRESS_S2
-#define BUTTON_FILTER             COMMAND_ADDRESS_S3
-#define BUTTON_HEATER             COMMAND_ADDRESS_S4
+#ifdef PCB_DESIGN_2
+  #define U4                      0x40
+  #define U5                      0x80
+
+  #define BUTTON_POWER            U5 | COMMAND_ADDRESS_S2
+  #define BUTTON_TEMPUP           U5 | COMMAND_ADDRESS_S4
+  #define BUTTON_TEMPDOWN         U4 | COMMAND_ADDRESS_S7
+  #define BUTTON_FILTER           U4 | COMMAND_ADDRESS_S1
+  #define BUTTON_HEATER           U5 | COMMAND_ADDRESS_S7
+
+#else
+  #define BUTTON_POWER              COMMAND_ADDRESS_S0
+  #define BUTTON_TEMPUP             COMMAND_ADDRESS_S1
+  #define BUTTON_TEMPDOWN           COMMAND_ADDRESS_S2
+  #define BUTTON_FILTER             COMMAND_ADDRESS_S3
+  #define BUTTON_HEATER             COMMAND_ADDRESS_S4
+#endif
 
 #define BUTTON_HOLD_PRESSED_MS    300
 #define BUTTON_INTERVAL_MS        500
@@ -291,8 +306,20 @@ CTRLPanel::CTRLPanel() {
   attachInterrupt(digitalPinToInterrupt(CLCK_PIN), CTRLPanel::clckRisingInterrupt, RISING); 
   attachInterrupt(digitalPinToInterrupt(HOLD_PIN), CTRLPanel::holdRisingInterrupt, RISING);
 
+#ifdef PCB_DESIGN_2
+
+  pinMode(U4_E_, OUTPUT);
+  digitalWrite(U4_E_, HIGH);
+
+  pinMode(U5_E_, OUTPUT);
+  digitalWrite(U5_E_, HIGH);
+
+#else
+
   pinMode(E_, OUTPUT);
   digitalWrite(E_, HIGH);
+
+#endif
 
   pinMode(S0, OUTPUT);
   digitalWrite(S0, LOW);
@@ -454,9 +481,26 @@ void  CTRLPanel::pushButton(int8_t button) {
   digitalWrite(S1, (button & 0x02) ? HIGH : LOW);
   digitalWrite(S2, (button & 0x04) ? HIGH : LOW);
 
-  digitalWrite(E_, LOW);
-  delay(BUTTON_HOLD_PRESSED_MS);
-  digitalWrite(E_, HIGH);
+  #ifdef PCB_DESIGN_2
+
+    if (button & U4) {
+      digitalWrite(U4_E_, LOW);
+      delay(BUTTON_HOLD_PRESSED_MS);
+      digitalWrite(U4_E_, HIGH);
+
+    } else if (button & U5) {
+      digitalWrite(U5_E_, LOW);
+      delay(BUTTON_HOLD_PRESSED_MS);
+      digitalWrite(U5_E_, HIGH);
+    }
+
+  #else
+
+    digitalWrite(E_, LOW);
+    delay(BUTTON_HOLD_PRESSED_MS);
+    digitalWrite(E_, HIGH);
+
+  #endif
 }
 
 
