@@ -24,7 +24,16 @@
 #include "Arduino.h"
 #include <ESP8266WiFi.h>
 
-#define MAX_PUBLISHER       10
+#include "config.h"
+
+#ifdef SSP_H
+  #define MAX_PUBLISHER       11
+#endif
+
+#ifdef SJB_HS
+  #define MAX_PUBLISHER       12
+#endif
+
 #define MAX_SUBSCRIBER      6
 
 #define MQTT_HOSTNAME_MAX   HOST_LEN_MAX

@@ -18,6 +18,8 @@
 #include "CFGSettings.h"
 #include "Arduino.h"
 
+#include "config.h"
+
 class CTRLPanel {
   
   public:
@@ -37,6 +39,10 @@ class CTRLPanel {
     uint8_t   isHeaterOn();
     uint8_t   isHeatReached();
 
+#ifdef SJB_HS
+    uint8_t   isJetOn();
+#endif    
+
     bool      hasError();
     uint16_t  getError();
 
@@ -44,7 +50,7 @@ class CTRLPanel {
     bool      setPowerOn(bool v);
     bool      setFilterOn(bool v);
     bool      setHeaterOn(bool v);
-    
+
     bool      isSetupModeTriggered();
 
   private:

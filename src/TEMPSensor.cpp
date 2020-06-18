@@ -39,8 +39,6 @@ uint16_t  TEMPSensor::getAverageTemperatureCelsius() {
     Rth      = (VCC * R2 / Vout) - R2;
     temp     = (1 / ((log(Rth / NTC_R25) / NTC_BETA) + (1 / (NTC_T25 + T_0)) )) - T_0;
 
-    DBG("readADC=%f, temp=%f", adcValue, temp);
-
     if (!initialized) {
         // initialize temperature samples with current temp.
         for (int i=0; i<TEMP_SAMPLE_MAX; i++) {

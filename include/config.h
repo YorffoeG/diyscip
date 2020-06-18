@@ -4,7 +4,18 @@
 #define OTA_ENABLED
 #define DBG_TCP_ENABLED
 #define DBG_SERIAL_ENABLED
+
+
+/* PCB DESIGN   */
+#define PCB_DESIGN_1
 //#define PCB_DESIGN_2 
+
+
+/* SPA MODEL    */
+#define SSP_H       // SSP-H-20-1/SSP-H-20-1C/SSP-H20-2
+//#define SJB_HS    // SJB-HS-20-1G/SJB-HS-30-1G/SJB-HS-22-1G/SJB-HS-33-1G
+
+
 
 #define DBG_TCP_PORT        8888
 #define SERIAL_DEBUG_SPEED  115200  
@@ -45,5 +56,18 @@
 
 #define WIFI_STA_HOSTNAME   "diyscip"
 #define WIFI_AP_NAME        "DYISCIP_Setup"
+
+
+
+/******   DO NOT MODIFY FROM HERE    *******/
+#if (defined(PCB_DESIGN_1) && defined(PCB_DESIGN_2)) || (!defined(PCB_DESIGN_1) && !defined(PCB_DESIGN_2))
+#error "YOU MUST DEFINE ONE AND ONE ONLY PCB DESIGN"
+#endif
+
+
+#if (defined(SSP_H) && defined(SJB_HS)) || (!defined(SSP_H) && !defined(SJB_HS))
+#error "YOU MUST DEFINE ONE AND ONE SPA MODEL"
+#endif
+
 
 #endif // CONFIG_H

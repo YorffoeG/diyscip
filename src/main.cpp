@@ -95,12 +95,19 @@ void setup() {
     mqttClient->addPublisher("spa/temp/board",         []() -> uint16_t { return tempSensor->getAverageTemperatureCelsius(); });
     mqttClient->setLastAddedPublisherUpdateInterval(TEMP_UPDATE_INTERVAL);
 
+    mqttClient->addPublisher("spa/error",              []() -> uint16_t { return controlPanel->getError(); });
+
     mqttClient->addPublisher("spa/temp/water",         []() -> uint16_t { return controlPanel->getWaterTemperatureCelsius(); });
     mqttClient->addPublisher("spa/temp/desired",       []() -> uint16_t { return controlPanel->getDesiredTemperatureCelsius(); });
     mqttClient->addPublisher("spa/state/power",        []() -> uint8_t  { return controlPanel->isPowerOn(); });
     mqttClient->addPublisher("spa/state/filter",       []() -> uint8_t  { return controlPanel->isFilterOn(); });
     mqttClient->addPublisher("spa/state/heater",       []() -> uint8_t  { return controlPanel->isHeaterOn(); });
     mqttClient->addPublisher("spa/state/bubble",       []() -> uint8_t  { return controlPanel->isBubbleOn(); });
+
+#ifdef SJB_HS
+    mqttClient->addPublisher("spa/state/jet",          []() -> uint8_t  { return controlPanel->isJetOn(); });
+#endif
+
     mqttClient->addPublisher("spa/state/heatreached",  []() -> uint8_t  { return controlPanel->isHeatReached(); });
     mqttClient->addPublisher("spa/state",              []() -> uint16_t { return controlPanel->getRawStatus(); });
 
