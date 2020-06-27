@@ -11,14 +11,22 @@ It connects to your WiFi network and communicate to a MQTT server for control (M
 
 > :warning: **disclaimer:** This project is not affiliated with Intxx. It is distributed in the hope it will be useful but WITHOUT ANY WARRANTY. Any damaged on your spa or lost of original product warranty is in your own responsibility, including any consequences of using this project.
 
-> :warning: **compatibilty:** This project has been developped and test on model SSP-H20-1C only. I guess it should works with SSP-H-20-1 and SSP-H-20-2 because those models share the same control panel. For the others models, some minors software AND hardware modifications may be necessary. Feel free to contact me to share our experience and improve this project compatibility.
-
-![image](https://github.com/YorffoeG/diyscip/blob/master/docs/controller_1.jpg)
+> :warning: **compatibility:** This project has been developed and test on model SSP-H20-1C only. I guess it should works with SSP-H-20-1 and SSP-H-20-2 because those models share the same control panel. For the others models, some minors software AND hardware modifications may be necessary. Feel free to contact me to share our experience and improve this project compatibility.
 
 ### How to build it ?
+There are several types of hardware implementations:
+1. single CD4051 
+2. dual CD4051
+3. no extra PCB hardware
+
+Depending on your hardware and the pool type you need to edit `config.h` and choose PCB DESIGN and SPA MODEL.
+
+#### 1. The original implementation (Single CD4051)
+![image](docs/controller_1.jpg)
+
 You need first the hardware ! Components are easy to find but still, it need some skills to build it.
 
-The main part is a NodeMcu V3, based on the esp8266. I used [this one](https://www.amazon.fr/dp/B06Y1ZPNMS) for prototyping. Using a NodeMcu development board rather than a simple ESP8266 chip is for convinient: it's include a 5V (from SPA) to 3.3v converter and mainly it offers a USB connection for upload and debug software. Electronic schematic is [here](https://github.com/YorffoeG/diyscip/blob/master/docs/schematic.jpg).
+The main part is a NodeMcu V3, based on the esp8266. I used [this one](https://www.amazon.fr/dp/B06Y1ZPNMS) for prototyping. Using a NodeMcu development board rather than a simple ESP8266 chip is for convenient: it's include a 5V (from SPA) to 3.3v converter and mainly it offers a USB connection for upload and debug software. Electronic schematic is [here](https://github.com/YorffoeG/diyscip/blob/master/docs/schematic.jpg).
 
 As an IDE, i use [Visual Studio Code](https://code.visualstudio.com/) with [PlatformIO](https://platformio.org/): Free and in my opinion, it offers a better usability for source management.
 
@@ -26,6 +34,14 @@ For the spa connectors which are Intxx design specific, they need to be 3D print
 
 
 Don't feel comfortable with hardware manufacturing ? That's a Do It Yourself project :smile: But feel free to contact me at _diyscip(AT)runrunweb.net_, i may have some ready to use controller in my pocket. But keep in mind it's your responsibility to use it on your spa.
+
+#### 2. ??? (Dual CD4051)
+
+#### 3. Button push by software (no extra PCB)
+![image](https://github.com/UlrichMai/MaiPureSpaController/raw/master/docs/D1_mini_mounted_on_display_panel_back.jpg)
+
+The mini version of 8266 is taped directly on the back of the display panel and wired to the connector on the display PCB.
+Please see [here](https://github.com/UlrichMai/MaiPureSpaController#hardware) for more information on this hardware setup.
 
 ### Settings the controller
 Here we are ! The controller is in the place. At first start up, you need to connect your mobile or computer to the WiFi network "DIYSCIP_setup", a configuration screen enable you to set your home WiFi network and password then setting the MQTT server you connect to. After a checking of you settings, the controller reboots and start to operate !
