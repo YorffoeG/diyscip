@@ -25,6 +25,8 @@
  *           |-------------------------------------------------------------------------------|
  * BIT       | 15 | 14 | 13 | 12 | 11 | 10 |  9 |  8 |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
  * 
+ * BUTTON    | HT |  0 | FC | UP |  0 | PW |  0 |  0 | DN |  0 |  0 |  0 | BB |  0 | FL |  0 |
+ *
  * DISPLAY   | DP |  0 |  A |  B | S3 |  D |  C |  0 |  E | S1 | S2 |  G |  F | S4 |  0 |  0 |
  * 
  * LED       |  X |  1 |  x |  x |  x |  x |  x |  x |  x |  x |  x |  x |  x |  x |  x |  x |
@@ -102,6 +104,17 @@
 
 #define FRAME_BEEP_BIT            0x0100
 
+#ifdef PCB_DESIGN_3
+  #define FRAME_BUTTON_POWER        0x0400
+  #define FRAME_BUTTON_TEMPUP       0x1000
+  #define FRAME_BUTTON_TEMPDOWN     0x0080
+  #define FRAME_BUTTON_FILTER       0x0002
+  #define FRAME_BUTTON_HEATER       0x8000
+  #define FRAME_BUTTON_BUBBLE       0x0008
+  #define FRAME_BUTTON_FC           0x2000
+  #define FRAME_BUTTON              (FRAME_BUTTON_POWER|FRAME_BUTTON_TEMPUP|FRAME_BUTTON_TEMPDOWN|FRAME_BUTTON_FILTER|FRAME_BUTTON_HEATER|FRAME_BUTTON_BUBBLE|FRAME_BUTTON_FC)
+#endif
+
 #define DISPLAY_DROP_FRAME_DELAY  100
 
 #define DISPLAY_DIGIT1            0x0008
@@ -128,36 +141,57 @@
 #define MIN_GLITCH_COUNTER        1000
 #define PREVENT_GLITCH_VALUE(src, dest, cnt)  if (dest != src) { if ((frameCounter - cnt) > RST_GLITCH_COUNTER) { cnt = frameCounter; } else if ((frameCounter - cnt) > MIN_GLITCH_COUNTER) { dest = src; }}
 
-
-#define COMMAND_ADDRESS_S0        0x00
-#define COMMAND_ADDRESS_S1        0x01
-#define COMMAND_ADDRESS_S2        0x02
-#define COMMAND_ADDRESS_S3        0x03
-#define COMMAND_ADDRESS_S4        0x04
-#define COMMAND_ADDRESS_S5        0x05
-#define COMMAND_ADDRESS_S6        0x06
-#define COMMAND_ADDRESS_S7        0x07
-
-#ifdef PCB_DESIGN_2
-  #define U4                      0x40
-  #define U5                      0x80
-
-  #define BUTTON_POWER            U5 | COMMAND_ADDRESS_S2
-  #define BUTTON_TEMPUP           U5 | COMMAND_ADDRESS_S4
-  #define BUTTON_TEMPDOWN         U4 | COMMAND_ADDRESS_S7
-  #define BUTTON_FILTER           U4 | COMMAND_ADDRESS_S1
-  #define BUTTON_HEATER           U5 | COMMAND_ADDRESS_S7
-
-#else
+#ifdef PCB_DESIGN_1
+  #define COMMAND_ADDRESS_S0        0x00
+  #define COMMAND_ADDRESS_S1        0x01
+  #define COMMAND_ADDRESS_S2        0x02
+  #define COMMAND_ADDRESS_S3        0x03
+  #define COMMAND_ADDRESS_S4        0x04
+  #define COMMAND_ADDRESS_S5        0x05
+  #define COMMAND_ADDRESS_S6        0x06
+  #define COMMAND_ADDRESS_S7        0x07
   #define BUTTON_POWER              COMMAND_ADDRESS_S0
   #define BUTTON_TEMPUP             COMMAND_ADDRESS_S1
   #define BUTTON_TEMPDOWN           COMMAND_ADDRESS_S2
   #define BUTTON_FILTER             COMMAND_ADDRESS_S3
   #define BUTTON_HEATER             COMMAND_ADDRESS_S4
+  #define BUTTON_HOLD_PRESSED_MS    300
+  #define BUTTON_INTERVAL_MS        500
 #endif
 
-#define BUTTON_HOLD_PRESSED_MS    300
-#define BUTTON_INTERVAL_MS        500
+#ifdef PCB_DESIGN_2
+  #define COMMAND_ADDRESS_S0        0x00
+  #define COMMAND_ADDRESS_S1        0x01
+  #define COMMAND_ADDRESS_S2        0x02
+  #define COMMAND_ADDRESS_S3        0x03
+  #define COMMAND_ADDRESS_S4        0x04
+  #define COMMAND_ADDRESS_S5        0x05
+  #define COMMAND_ADDRESS_S6        0x06
+  #define COMMAND_ADDRESS_S7        0x07
+  #define U4                        0x40
+  #define U5                        0x80
+  
+  #define BUTTON_POWER              U5 | COMMAND_ADDRESS_S2
+  #define BUTTON_TEMPUP             U5 | COMMAND_ADDRESS_S4
+  #define BUTTON_TEMPDOWN           U4 | COMMAND_ADDRESS_S7
+  #define BUTTON_FILTER             U4 | COMMAND_ADDRESS_S1
+  #define BUTTON_HEATER             U5 | COMMAND_ADDRESS_S7
+  #define BUTTON_HOLD_PRESSED_MS    300
+  #define BUTTON_INTERVAL_MS        500
+#endif
+
+#ifdef PCB_DESIGN_3
+  #define BUTTON_POWER              0  
+  #define BUTTON_TEMPUP             6  
+  #define BUTTON_TEMPDOWN           2  
+  #define BUTTON_FILTER             3  
+  #define BUTTON_HEATER             4  
+  #define BUTTON_BUBBLE             5  
+  #define BUTTON_FC                 1  
+  
+  #define BUTTON_PUSH_CYCLES       10
+  #define BUTTON_INTERVAL_MS       1000
+#endif
 
 #define MIN_SET_DESIRED_TEMPERATURE   20
 #define MAX_SET_DESIRED_TEMPERATURE   40
@@ -311,6 +345,11 @@ volatile uint8_t  CTRLPanel::lastTempUnit                       = 0;
 volatile uint32_t CTRLPanel::lastTempUnitChangeFrameCounter     = 0;
 volatile uint16_t CTRLPanel::counterTempUnitChanged             = 0;
 
+#ifdef PCB_DESIGN_3
+volatile bool    CTRLPanel::buttonPushRequest[7] = {0};
+volatile int     CTRLPanel::buttonPushCycles[7] = {0};
+volatile bool    CTRLPanel::buttonPushActive = false;
+#endif
 
 CTRLPanel::CTRLPanel() {
 
@@ -318,30 +357,40 @@ CTRLPanel::CTRLPanel() {
   pinMode(CLCK_PIN, INPUT);
   pinMode(HOLD_PIN, INPUT);
 
-  attachInterrupt(digitalPinToInterrupt(CLCK_PIN), CTRLPanel::clckRisingInterrupt, RISING); 
-  attachInterrupt(digitalPinToInterrupt(HOLD_PIN), CTRLPanel::holdRisingInterrupt, RISING);
-
-#ifdef PCB_DESIGN_2
-
-  pinMode(U4_E_, OUTPUT);
-  digitalWrite(U4_E_, HIGH);
-
-  pinMode(U5_E_, OUTPUT);
-  digitalWrite(U5_E_, HIGH);
-
-#else
-
+#ifdef PCB_DESIGN_1
   pinMode(E_, OUTPUT);
   digitalWrite(E_, HIGH);
-
-#endif
-
   pinMode(S0, OUTPUT);
   digitalWrite(S0, LOW);
   pinMode(S1, OUTPUT);
   digitalWrite(S1, LOW);
   pinMode(S2, OUTPUT);
   digitalWrite(S2, LOW);
+#endif
+
+#ifdef PCB_DESIGN_2
+
+  pinMode(U4_E_, OUTPUT);
+  digitalWrite(U4_E_, HIGH);
+  pinMode(U5_E_, OUTPUT);
+  digitalWrite(U5_E_, HIGH);
+  pinMode(S0, OUTPUT);
+  digitalWrite(S0, LOW);
+  pinMode(S1, OUTPUT);
+  digitalWrite(S1, LOW);
+  pinMode(S2, OUTPUT);
+  digitalWrite(S2, LOW);
+#endif
+
+#ifdef PCB_DESIGN_3
+  pinMode(OUT_PIN, OUTPUT);
+  digitalWrite(OUT_PIN, HIGH);
+  pinMode(BEEP_PIN, OUTPUT);
+  digitalWrite(BEEP_PIN, LOW); //shut off beeper by default
+#endif
+
+  attachInterrupt(digitalPinToInterrupt(CLCK_PIN), CTRLPanel::clckRisingInterrupt, RISING); 
+  attachInterrupt(digitalPinToInterrupt(HOLD_PIN), CTRLPanel::holdRisingInterrupt, RISING);
 }
    
 void CTRLPanel::clckRisingInterrupt() {
@@ -352,11 +401,63 @@ void CTRLPanel::clckRisingInterrupt() {
 void CTRLPanel::holdRisingInterrupt() { 
   frameCounter ++;
 
+#ifdef PCB_DESIGN_3
+  if (buttonPushActive) { // reset push pulse if active
+    digitalWrite(OUT_PIN, HIGH);
+    buttonPushActive = false;
+  }
+#endif
+
   if (frameShift == FRAME_BITS_SIZE) {
     frameShift = 0;
     
     if (frameValue != FRAME_CUE) {
-     if (frameValue & FRAME_DISPLAY) {
+      if (0) {
+#ifdef PCB_DESIGN_3
+      } else if ((frameValue & FRAME_BUTTON) && !(frameValue & ~(FRAME_BUTTON|FRAME_BEEP_BIT))) { // button bits only
+
+        int button;
+        switch (frameValue & FRAME_BUTTON) {
+          case FRAME_BUTTON_POWER:  
+            button = BUTTON_POWER; 
+            break;
+          case FRAME_BUTTON_TEMPUP:
+            button = BUTTON_TEMPUP; 
+            break;
+          case FRAME_BUTTON_TEMPDOWN:
+            button = BUTTON_TEMPDOWN; 
+            break;
+          case FRAME_BUTTON_FILTER:
+            button = BUTTON_FILTER; 
+            break;
+          case FRAME_BUTTON_HEATER:
+            button = BUTTON_HEATER; 
+            break;
+          case FRAME_BUTTON_BUBBLE:
+            button = BUTTON_BUBBLE; 
+            break;
+          case FRAME_BUTTON_FC:
+            button = BUTTON_FC; 
+            break;
+          default:
+            button = -1;
+            break; 
+        }
+        if (button >= 0) {
+          if (buttonPushRequest[button]) { // request to push this button?
+            if (buttonPushCycles[button] == 0) { // requested push cycles reached?
+              buttonPushRequest[button] = false;
+            } else {
+              // start another push button pulse (until next latch)
+              digitalWrite(OUT_PIN, LOW);
+              buttonPushActive = true;
+              buttonPushCycles[button]--;
+            }
+          }
+        }
+#endif
+      } else if (frameValue & FRAME_DISPLAY) {
+     
         byte digit;
 
         if ((frameValue & FRAME_DISPLAY_DIGIT_MASK) == 0) { // black display
@@ -490,33 +591,43 @@ void CTRLPanel::holdRisingInterrupt() {
   }
 }
 
-
+#ifdef PCB_DESIGN_1
 void  CTRLPanel::pushButton(int8_t button) {
   digitalWrite(S0, (button & 0x01) ? HIGH : LOW);
   digitalWrite(S1, (button & 0x02) ? HIGH : LOW);
   digitalWrite(S2, (button & 0x04) ? HIGH : LOW);
 
-  #ifdef PCB_DESIGN_2
-
-    if (button & U4) {
-      digitalWrite(U4_E_, LOW);
-      delay(BUTTON_HOLD_PRESSED_MS);
-      digitalWrite(U4_E_, HIGH);
-
-    } else if (button & U5) {
-      digitalWrite(U5_E_, LOW);
-      delay(BUTTON_HOLD_PRESSED_MS);
-      digitalWrite(U5_E_, HIGH);
-    }
-
-  #else
-
-    digitalWrite(E_, LOW);
-    delay(BUTTON_HOLD_PRESSED_MS);
-    digitalWrite(E_, HIGH);
-
-  #endif
+  digitalWrite(E_, LOW);
+  delay(BUTTON_HOLD_PRESSED_MS);
+  digitalWrite(E_, HIGH);
 }
+#endif
+
+#ifdef PCB_DESIGN_2
+void  CTRLPanel::pushButton(int8_t button) {
+  digitalWrite(S0, (button & 0x01) ? HIGH : LOW);
+  digitalWrite(S1, (button & 0x02) ? HIGH : LOW);
+  digitalWrite(S2, (button & 0x04) ? HIGH : LOW);
+
+  if (button & U4) {
+    digitalWrite(U4_E_, LOW);
+    delay(BUTTON_HOLD_PRESSED_MS);
+    digitalWrite(U4_E_, HIGH);
+
+  } else if (button & U5) {
+    digitalWrite(U5_E_, LOW);
+    delay(BUTTON_HOLD_PRESSED_MS);
+    digitalWrite(U5_E_, HIGH);
+  }
+}
+#endif
+
+#ifdef PCB_DESIGN_3
+void  CTRLPanel::pushButton(int8_t button) {
+    buttonPushRequest[button] = true;
+    buttonPushCycles[button] = BUTTON_PUSH_CYCLES;
+}
+#endif
 
 
 uint16_t CTRLPanel::convertDisplayToCelsius(uint16_t displayValue) {

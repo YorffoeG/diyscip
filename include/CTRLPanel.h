@@ -80,7 +80,11 @@ class CTRLPanel {
     static volatile uint8_t   lastTempUnit;
     static volatile uint32_t  lastTempUnitChangeFrameCounter;
     static volatile uint16_t  counterTempUnitChanged;
-
+#ifdef PCB_DESIGN_3
+    static volatile bool    buttonPushRequest[7];
+    static volatile int     buttonPushCycles[7];
+    static volatile bool    buttonPushActive;
+#endif
     CTRLPanel();
     static ICACHE_RAM_ATTR void clckRisingInterrupt();
     static ICACHE_RAM_ATTR void holdRisingInterrupt();

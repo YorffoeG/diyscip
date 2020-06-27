@@ -58,6 +58,8 @@ void setup() {
 
   #ifdef OTA_ENABLED
   
+    //ArduinoOTA.setPassword("*****");
+     
     ArduinoOTA.onStart([]() {
       DBG("OTA: Start [%d]", ArduinoOTA.getCommand());
     });

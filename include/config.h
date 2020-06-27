@@ -7,8 +7,9 @@
 
 
 /* PCB DESIGN   */
-#define PCB_DESIGN_1
+//#define PCB_DESIGN_1
 //#define PCB_DESIGN_2 
+#define PCB_DESIGN_3 
 
 
 /* SPA MODEL    */
@@ -20,14 +21,29 @@
 #define DBG_TCP_PORT        8888
 #define SERIAL_DEBUG_SPEED  115200  
 
-#define DATA_PIN    12    /*!< white wire   */
-#define CLCK_PIN    14    /*!< yellow wire  */
-#define HOLD_PIN    13    /*!< black wire   */
+#ifdef PCB_DESIGN_1
+
+	#define DATA_PIN    12    /*!< white wire   */
+	#define CLCK_PIN    14    /*!< yellow wire  */
+	#define HOLD_PIN    13    /*!< black wire   */
+
+    /* connected to CD4051 */
+    #define S0          4
+    #define S1          5
+    #define S2          15  
+
+    #define E_          16    /* enable at 0 CD4051 output */
+
+#endif 
 
 #ifdef PCB_DESIGN_2
     /*
         !! PCB V2 - DUAL CD4051 !!
     */
+
+	#define DATA_PIN    12    /*!< white wire   */
+	#define CLCK_PIN    14    /*!< yellow wire  */
+	#define HOLD_PIN    13    /*!< black wire   */
 
     /* connected to U4 & U5 */
     #define S0  5
@@ -37,14 +53,17 @@
     #define U4_E_  16   /* enable at 0 U4 output */
     #define U5_E_   0
 
-#else
+#endif 
 
-    /* connected to CD4051 */
-    #define S0          4
-    #define S1          5
-    #define S2          15  
-
-    #define E_          16    /* enable at 0 CD4051 output */
+#ifdef PCB_DESIGN_3
+    /*
+        !! PCB V3 - D1 mini, no PCB
+    */
+	#define DATA_PIN    D5    /*!< white wire   */
+	#define CLCK_PIN    D7    /*!< yellow wire  */
+	#define HOLD_PIN    D6    /*!< black wire   */
+	#define OUT_PIN     D0    /*!< 1kOhm to white wire to simulate button press */
+	#define BEEP_PIN    D2    /*!< connected to buzzer circuitry */
 
 #endif 
 
@@ -60,8 +79,10 @@
 
 
 /******   DO NOT MODIFY FROM HERE    *******/
-#if (defined(PCB_DESIGN_1) && defined(PCB_DESIGN_2)) || (!defined(PCB_DESIGN_1) && !defined(PCB_DESIGN_2))
-#error "YOU MUST DEFINE ONE AND ONE ONLY PCB DESIGN"
+#if !((defined(PCB_DESIGN_1) && !defined(PCB_DESIGN_2) && !defined(PCB_DESIGN_3)) \
+  || (!defined(PCB_DESIGN_1) &&  defined(PCB_DESIGN_2) && !defined(PCB_DESIGN_3)) \
+  || (!defined(PCB_DESIGN_1) && !defined(PCB_DESIGN_2) &&  defined(PCB_DESIGN_3)) )
+#error "YOU MUST DEFINE EXACTY ONE PCB DESIGN"
 #endif
 
 
