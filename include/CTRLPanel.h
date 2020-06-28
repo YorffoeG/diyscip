@@ -41,9 +41,9 @@ class CTRLPanel {
 
 #ifdef SJB_HS
     uint8_t   isJetOn();
-    uint8_t   isCleanOn();
+    //uint8_t   isCleanOn();
     bool      setJetOn(bool v);
-    bool      setCleanOn(bool v);
+    //bool      setCleanOn(bool v);
 #endif    
 
     bool      hasError();
