@@ -41,6 +41,9 @@ class CTRLPanel {
 
 #ifdef SJB_HS
     uint8_t   isJetOn();
+    uint8_t   isCleanOn();
+    bool      setJetOn(bool v);
+    bool      setCleanOn(bool v);
 #endif    
 
     bool      hasError();
@@ -81,8 +84,9 @@ class CTRLPanel {
     static volatile uint32_t  lastTempUnitChangeFrameCounter;
     static volatile uint16_t  counterTempUnitChanged;
 #ifdef PCB_DESIGN_3
-    static volatile bool    buttonPushRequest[7];
-    static volatile int     buttonPushCycles[7];
+    #define BUTTON_COUNT    9
+    static volatile bool    buttonPushRequest[BUTTON_COUNT];
+    static volatile int     buttonPushCycles[BUTTON_COUNT];
     static volatile bool    buttonPushActive;
 #endif
     CTRLPanel();

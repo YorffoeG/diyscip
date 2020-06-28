@@ -105,6 +105,7 @@
 #define FRAME_BEEP_BIT            0x0100
 
 #ifdef PCB_DESIGN_3
+#ifdef SSP_H
   #define FRAME_BUTTON_POWER        0x0400
   #define FRAME_BUTTON_TEMPUP       0x1000
   #define FRAME_BUTTON_TEMPDOWN     0x0080
@@ -113,6 +114,19 @@
   #define FRAME_BUTTON_BUBBLE       0x0008
   #define FRAME_BUTTON_FC           0x2000
   #define FRAME_BUTTON              (FRAME_BUTTON_POWER|FRAME_BUTTON_TEMPUP|FRAME_BUTTON_TEMPDOWN|FRAME_BUTTON_FILTER|FRAME_BUTTON_HEATER|FRAME_BUTTON_BUBBLE|FRAME_BUTTON_FC)
+#endif
+#ifdef SJB_HS
+  #define FRAME_BUTTON_POWER        0x0400
+  #define FRAME_BUTTON_TEMPUP       0x1000
+  #define FRAME_BUTTON_TEMPDOWN     0x0200
+  #define FRAME_BUTTON_FILTER       0x0080
+  #define FRAME_BUTTON_HEATER       0x8000
+  #define FRAME_BUTTON_BUBBLE       0x0002
+  #define FRAME_BUTTON_FC           0x2000
+  #define FRAME_BUTTON_JET          0x0008
+  #define FRAME_BUTTON_CLEAN        0x0001
+  #define FRAME_BUTTON              (FRAME_BUTTON_POWER|FRAME_BUTTON_TEMPUP|FRAME_BUTTON_TEMPDOWN|FRAME_BUTTON_FILTER|FRAME_BUTTON_HEATER|FRAME_BUTTON_BUBBLE|FRAME_BUTTON_FC|FRAME_BUTTON_JET|FRAME_BUTTON_CLEAN)
+#endif
 #endif
 
 #define DISPLAY_DROP_FRAME_DELAY  100
@@ -188,6 +202,8 @@
   #define BUTTON_HEATER             4  
   #define BUTTON_BUBBLE             5  
   #define BUTTON_FC                 1  
+  #define BUTTON_JET                7  
+  #define BUTTON_CLEAN              8  
   
   #define BUTTON_PUSH_CYCLES       10
   #define BUTTON_INTERVAL_MS       1000
@@ -262,6 +278,13 @@ uint8_t CTRLPanel::isHeatReached() {
   uint8_t CTRLPanel::isJetOn() {
     return (ledStatus != UNSET_VALUE) ? ((ledStatus & FRAME_LED_JET) ? UINT8_TRUE : UINT8_FALSE) : UNSET_VALUEUINT8;
   } 
+
+boolean CTRLPanel::setJetOn(bool v) {
+  if (v ^ (isJetOn() == UINT8_TRUE)) {
+    pushButton(BUTTON_JET);
+  }
+  return true;
+}
 #endif
 
 boolean CTRLPanel::setDesiredTemperatureCelsius(uint16_t temp) {
@@ -346,8 +369,8 @@ volatile uint32_t CTRLPanel::lastTempUnitChangeFrameCounter     = 0;
 volatile uint16_t CTRLPanel::counterTempUnitChanged             = 0;
 
 #ifdef PCB_DESIGN_3
-volatile bool    CTRLPanel::buttonPushRequest[7] = {0};
-volatile int     CTRLPanel::buttonPushCycles[7] = {0};
+volatile bool    CTRLPanel::buttonPushRequest[BUTTON_COUNT] = {0};
+volatile int     CTRLPanel::buttonPushCycles[BUTTON_COUNT] = {0};
 volatile bool    CTRLPanel::buttonPushActive = false;
 #endif
 

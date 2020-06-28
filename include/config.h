@@ -13,8 +13,8 @@
 
 
 /* SPA MODEL    */
-#define SSP_H       // SSP-H-20-1/SSP-H-20-1C/SSP-H20-2
-//#define SJB_HS    // SJB-HS-20-1G/SJB-HS-30-1G/SJB-HS-22-1G/SJB-HS-33-1G
+//#define SSP_H       // SSP-H-20-1/SSP-H-20-1C/SSP-H20-2
+#define SJB_HS    // SJB-HS-20-1G/SJB-HS-30-1G/SJB-HS-22-1G/SJB-HS-33-1G
 
 
 
