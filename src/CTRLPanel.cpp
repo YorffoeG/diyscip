@@ -84,7 +84,7 @@
 #define FRAME_DISPLAY_DIGITC      (FRAME_DISPLAY_FRAGMENT_A|FRAME_DISPLAY_FRAGMENT_F|FRAME_DISPLAY_FRAGMENT_E|FRAME_DISPLAY_FRAGMENT_D)
 #define FRAME_DISPLAY_DIGITE      (FRAME_DISPLAY_FRAGMENT_A|FRAME_DISPLAY_FRAGMENT_F|FRAME_DISPLAY_FRAGMENT_E|FRAME_DISPLAY_FRAGMENT_D|FRAME_DISPLAY_FRAGMENT_G)
 #define FRAME_DISPLAY_DIGITF      (FRAME_DISPLAY_FRAGMENT_E|FRAME_DISPLAY_FRAGMENT_F|FRAME_DISPLAY_FRAGMENT_A|FRAME_DISPLAY_FRAGMENT_G)
-#define FRAME_DISPLAY_DIGITH      (FRAME_DISPLAY_FRAGMENT_B|FRAME_DISPLAT_FRAGMENT_C|FRAME_DISPLAY_FRAGMENT_E|FRAME_DISPLAY_FRAGMENT_F|FRAME_DISPLAY_FRAGMENT_G)
+#define FRAME_DISPLAY_DIGITH      (FRAME_DISPLAY_FRAGMENT_B|FRAME_DISPLAY_FRAGMENT_C|FRAME_DISPLAY_FRAGMENT_E|FRAME_DISPLAY_FRAGMENT_F|FRAME_DISPLAY_FRAGMENT_G)
 
 #define FRAME_LED                 0x4000
 #define FRAME_LED_POWER           0x0001
@@ -100,6 +100,8 @@
 #ifdef SJB_HS
   #define FRAME_LED_BUBBLE          0x0002
   #define FRAME_LED_JET             0x0400
+  #define FRAME_LED_CLEAN           0x2000
+  //U2-Q7 LED Clean Red = 0x8000, U2-Q5 LED Clean Green = 0x2000
 #endif
 
 #define FRAME_BEEP_BIT            0x0100
@@ -143,6 +145,7 @@
 
 #define DISPLAY_UNIT_F            0x000F
 #define DISPLAY_UNIT_C            0x000C
+#define IS_TEMPERATURE_ON_DISPLAY(v) ((DISPLAY_UNIT(v) ==DISPLAY_UNIT_C) || (DISPLAY_UNIT(v) == DISPLAY_UNIT_F))
 
 #define UINT8_TRUE                0x01
 #define UINT8_FALSE               0x00
@@ -205,7 +208,7 @@
   #define BUTTON_JET                7  
   #define BUTTON_CLEAN              8  
   
-  #define BUTTON_PUSH_CYCLES       10
+  #define BUTTON_PUSH_CYCLES       15
   #define BUTTON_INTERVAL_MS       1000
 #endif
 
@@ -279,12 +282,22 @@ uint8_t CTRLPanel::isHeatReached() {
     return (ledStatus != UNSET_VALUE) ? ((ledStatus & FRAME_LED_JET) ? UINT8_TRUE : UINT8_FALSE) : UNSET_VALUEUINT8;
   } 
 
-boolean CTRLPanel::setJetOn(bool v) {
-  if (v ^ (isJetOn() == UINT8_TRUE)) {
-    pushButton(BUTTON_JET);
+  boolean CTRLPanel::setJetOn(bool v) {
+    if (v ^ (isJetOn() == UINT8_TRUE)) {
+      pushButton(BUTTON_JET);
+    }
+    return true;
   }
-  return true;
-}
+
+  uint8_t CTRLPanel::isCleanOn() {
+    return (ledStatus != UNSET_VALUE) ? ((ledStatus & FRAME_LED_CLEAN) ? UINT8_TRUE : UINT8_FALSE) : UNSET_VALUEUINT8;
+  } 
+
+  boolean CTRLPanel::setCleanOn(bool v) {
+      pushButton(BUTTON_CLEAN);
+    return true;
+  }
+
 #endif
 
 boolean CTRLPanel::setDesiredTemperatureCelsius(uint16_t temp) {
@@ -437,7 +450,7 @@ void CTRLPanel::holdRisingInterrupt() {
     if (frameValue != FRAME_CUE) {
       if (0) {
 #ifdef PCB_DESIGN_3
-      } else if ((frameValue & FRAME_BUTTON) && !(frameValue & ~(FRAME_BUTTON|FRAME_BEEP_BIT))) { // button bits only
+      } else if ((frameValue & FRAME_BUTTON) && !(frameValue & ~(FRAME_BUTTON|FRAME_BEEP_BIT))) { // button bits set and nothing else 
 
         int button;
         switch (frameValue & FRAME_BUTTON) {
@@ -461,6 +474,12 @@ void CTRLPanel::holdRisingInterrupt() {
             break;
           case FRAME_BUTTON_FC:
             button = BUTTON_FC; 
+            break;
+          case FRAME_BUTTON_JET:
+            button = BUTTON_JET; 
+            break;
+          case FRAME_BUTTON_CLEAN:
+            button = BUTTON_CLEAN; 
             break;
           default:
             button = -1;
@@ -537,6 +556,9 @@ void CTRLPanel::holdRisingInterrupt() {
           case FRAME_DISPLAY_DIGITF:
             digit = 0xF;
             break;
+          case FRAME_DISPLAY_DIGITH:
+            digit = 0xB;
+            break;
             
           default:
             return ;
@@ -560,6 +582,7 @@ void CTRLPanel::holdRisingInterrupt() {
         }
 
         if ((unsetDigits == 0) && NO_ERROR_ON_DISPLAY(displayValue)) {
+         if (IS_TEMPERATURE_ON_DISPLAY(displayValue)) {
           if (isDisplayBlink) { // display is blinking, set desired temperature
             
             if (frameCounter - lastBlackDisplayFrameCounter > 960) { // no blinking since too long
@@ -599,7 +622,9 @@ void CTRLPanel::holdRisingInterrupt() {
               lastTempUnit = DISPLAY_UNIT(displayValue);
             }
           }
-          
+         } else {
+           //remaining clean hours, TBD
+         }  
         }
 
       } else if (frameValue & FRAME_LED) {
