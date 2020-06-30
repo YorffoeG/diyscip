@@ -107,6 +107,7 @@ void setup() {
     mqttClient->addPublisher("spa/state/bubble",       []() -> uint8_t  { return controlPanel->isBubbleOn(); });
 
 #ifdef SJB_HS
+    mqttClient->addSubscriber("spa/state/bubble/set",  [](bool v) -> bool { return controlPanel->setBubbleOn(v); });
     mqttClient->addPublisher("spa/state/jet",          []() -> uint8_t  { return controlPanel->isJetOn(); });
     mqttClient->addSubscriber("spa/state/jet/set",     [](bool v) -> bool { return controlPanel->setJetOn(v); });
     mqttClient->addPublisher("spa/state/clean",        []() -> uint8_t  { return controlPanel->isCleanOn(); });

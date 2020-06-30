@@ -278,6 +278,13 @@ uint8_t CTRLPanel::isHeatReached() {
 }
 
 #ifdef SJB_HS
+  boolean CTRLPanel::setBubbleOn(bool v) {
+    if (v ^ (isBubbleOn() == UINT8_TRUE)) {
+      pushButton(BUTTON_BUBBLE);
+    }
+    return true;
+  }
+
   uint8_t CTRLPanel::isJetOn() {
     return (ledStatus != UNSET_VALUE) ? ((ledStatus & FRAME_LED_JET) ? UINT8_TRUE : UINT8_FALSE) : UNSET_VALUEUINT8;
   } 
