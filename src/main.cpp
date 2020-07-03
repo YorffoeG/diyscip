@@ -107,11 +107,13 @@ void setup() {
     mqttClient->addPublisher("spa/state/bubble",       []() -> uint8_t  { return controlPanel->isBubbleOn(); });
 
 #ifdef SJB_HS
-    mqttClient->addSubscriber("spa/state/bubble/set",  [](bool v) -> bool { return controlPanel->setBubbleOn(v); });
     mqttClient->addPublisher("spa/state/jet",          []() -> uint8_t  { return controlPanel->isJetOn(); });
-    mqttClient->addSubscriber("spa/state/jet/set",     [](bool v) -> bool { return controlPanel->setJetOn(v); });
     mqttClient->addPublisher("spa/state/clean",        []() -> uint8_t  { return controlPanel->isCleanOn(); });
+#ifdef PCB_DESIGN_3
+    mqttClient->addSubscriber("spa/state/bubble/set",  [](bool v) -> bool { return controlPanel->setBubbleOn(v); });
+    mqttClient->addSubscriber("spa/state/jet/set",     [](bool v) -> bool { return controlPanel->setJetOn(v); });
     mqttClient->addSubscriber("spa/state/clean/set",   [](bool v) -> bool { return controlPanel->setCleanOn(v); });
+#endif
 #endif
 
     mqttClient->addPublisher("spa/state/heatreached",  []() -> uint8_t  { return controlPanel->isHeatReached(); });

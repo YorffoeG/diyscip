@@ -278,16 +278,21 @@ uint8_t CTRLPanel::isHeatReached() {
 }
 
 #ifdef SJB_HS
+  uint8_t CTRLPanel::isJetOn() {
+    return (ledStatus != UNSET_VALUE) ? ((ledStatus & FRAME_LED_JET) ? UINT8_TRUE : UINT8_FALSE) : UNSET_VALUEUINT8;
+  } 
+
+  uint8_t CTRLPanel::isCleanOn() {
+    return (ledStatus != UNSET_VALUE) ? ((ledStatus & FRAME_LED_CLEAN) ? UINT8_TRUE : UINT8_FALSE) : UNSET_VALUEUINT8;
+  } 
+
+#ifdef PCB_DESIGN_3
   boolean CTRLPanel::setBubbleOn(bool v) {
     if (v ^ (isBubbleOn() == UINT8_TRUE)) {
       pushButton(BUTTON_BUBBLE);
     }
     return true;
   }
-
-  uint8_t CTRLPanel::isJetOn() {
-    return (ledStatus != UNSET_VALUE) ? ((ledStatus & FRAME_LED_JET) ? UINT8_TRUE : UINT8_FALSE) : UNSET_VALUEUINT8;
-  } 
 
   boolean CTRLPanel::setJetOn(bool v) {
     if (v ^ (isJetOn() == UINT8_TRUE)) {
@@ -296,15 +301,11 @@ uint8_t CTRLPanel::isHeatReached() {
     return true;
   }
 
-  uint8_t CTRLPanel::isCleanOn() {
-    return (ledStatus != UNSET_VALUE) ? ((ledStatus & FRAME_LED_CLEAN) ? UINT8_TRUE : UINT8_FALSE) : UNSET_VALUEUINT8;
-  } 
-
   boolean CTRLPanel::setCleanOn(bool v) {
       pushButton(BUTTON_CLEAN);
     return true;
   }
-
+#endif 
 #endif
 
 boolean CTRLPanel::setDesiredTemperatureCelsius(uint16_t temp) {
@@ -482,12 +483,14 @@ void CTRLPanel::holdRisingInterrupt() {
           case FRAME_BUTTON_FC:
             button = BUTTON_FC; 
             break;
+#ifdef SJB_HS            
           case FRAME_BUTTON_JET:
             button = BUTTON_JET; 
             break;
           case FRAME_BUTTON_CLEAN:
             button = BUTTON_CLEAN; 
             break;
+#endif
           default:
             button = -1;
             break; 

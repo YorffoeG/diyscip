@@ -40,11 +40,13 @@ class CTRLPanel {
     uint8_t   isHeatReached();
 
 #ifdef SJB_HS
-    bool      setBubbleOn(bool v);
     uint8_t   isJetOn();
     uint8_t   isCleanOn();
+#ifdef PCB_DESIGN_3
+    bool      setBubbleOn(bool v);
     bool      setJetOn(bool v);
     bool      setCleanOn(bool v);
+#endif    
 #endif    
 
     bool      hasError();
