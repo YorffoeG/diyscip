@@ -106,10 +106,12 @@ void setup() {
 
 #ifdef SJB_HS
     mqttClient->addPublisher("spa/state/jet",          []() -> uint8_t  { return controlPanel->isJetOn(); });
+    mqttClient->addPublisher("spa/sanitizer",          []() -> uint16_t { return controlPanel->getSanitizerTime(); });
+    mqttClient->addSubscriber("spa/sanitizer/set",     [](uint16_t v) -> bool { return controlPanel->setSanitizerTime(v); });
 #endif
 
     mqttClient->addPublisher("spa/state/heatreached",  []() -> uint8_t  { return controlPanel->isHeatReached(); });
-    mqttClient->addPublisher("spa/state",              []() -> uint16_t { return controlPanel->getRawStatus(); });
+    mqttClient->addPublisher("spa/state",              []() -> uint16_t { return controlPanel->getRawStatus();  });
 
     mqttClient->addSubscriber("spa/temp/desired/set",  [](uint16_t v) -> bool { return controlPanel->setDesiredTemperatureCelsius(v); });
     mqttClient->addSubscriber("spa/state/power/set",   [](bool v) -> bool { return controlPanel->setPowerOn(v); });

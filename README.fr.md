@@ -32,7 +32,7 @@ Vous ne vous sentez pas à l'aise avec la fabrication de la carte ? C'est un pro
 ### Configurer le controlleur
 Et voilà ! le controlleur est en place. Au premier démarrage, vous devez connecter votre téléphone ou ordinateur au réseau WiFi "DIYSCIP_setup", un écran de configuration vous permet de renseigner votre réseau WiFi avec son mot de passe puis les paramétres du serveur MQTT sur lequel vous connecter. Après vérification de vos réglages, le controlleur redémarrer et est prêt à fonctionner.
 
-Pour retourner au mode de configuration, quand votre spa est en marche, appuyez 6 fois rapidement sur le bouton de sélection de l'unité de température, puis éteingnez le spa (pas électriquement mais sur le panneau de commande). Le controlleur redémarre en mode configuration.
+Pour retourner au mode de configuration, quand votre spa est en marche, appuyez 6 fois rapidement sur le bouton de sélection de l'unité de température, puis éteignez le spa (pas électriquement mais sur le panneau de commande). Le contrôleur redémarre en mode configuration.
 
 ![image](https://github.com/YorffoeG/diyscip/blob/master/docs/DIYSCIP_settings.jpg)
 

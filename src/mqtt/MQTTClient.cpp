@@ -165,6 +165,10 @@ void MQTTClient::loop() {
             this->publish("spa/sys/version", FW_VERSION);
             this->publish("spa/sys/updatable", _settings.isUpdateEnabled() ? "true" : "false");
 
+            #ifdef SJB_HS
+              this->publish("spa/model", "SJB");
+            #endif
+
             return ;
 
           } else { DBG("MQTT> CONNACK error %d", result); }

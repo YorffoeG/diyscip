@@ -41,9 +41,10 @@ class CTRLPanel {
 
 #ifdef SJB_HS
     uint8_t   isJetOn();
+    uint16_t  getSanitizerTime();
+    boolean   setSanitizerTime(uint16_t time);
 #endif    
 
-    bool      hasError();
     uint16_t  getError();
 
     bool      setDesiredTemperatureCelsius(uint16_t temp);
@@ -63,8 +64,10 @@ class CTRLPanel {
     
     static volatile uint16_t  ledStatus;
     static volatile uint16_t  displayValue;
+    static volatile uint16_t  errorValue;
     static volatile uint16_t  waterTemp;
     static volatile uint16_t  desiredTemp;
+    static volatile uint16_t  sanitizerTime;
 
     static volatile uint16_t  lastWaterTemp;
 
@@ -73,7 +76,9 @@ class CTRLPanel {
 
     static volatile uint32_t  lastWaterTempChangeFrameCounter;
     static volatile uint32_t  lastDesiredTempChangeFrameCounter;
+    static volatile uint32_t  lastSanitizerTimeChangeFrameCounter;
     static volatile uint32_t  lastLedStatusChangeFrameCounter;
+    static volatile uint32_t  lastErrorChangeFrameCounter;
     
     static volatile uint16_t  unsetDigits;
 
