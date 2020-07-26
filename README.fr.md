@@ -72,6 +72,7 @@ Publish Topics:
 - **spa/state/heater** : true | false
 - **spa/state/heatreached** : true | false (true si la température est atteinte)
 - **spa/state/bubble** : true | false
+- **spa/state/jet** : on | off (Model SJB_HS uniquement)
 - **spa/temp/board** : number - in Celsius degree
 - **spa/temp/water** : number - in Celsius degree
 - **spa/temp/desired** : number - in Celsius degree
