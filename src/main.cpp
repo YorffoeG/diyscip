@@ -111,7 +111,7 @@ void setup() {
     mqttClient->addPublisher("spa/state/heatreached",  []() -> uint8_t  { return controlPanel->isHeatReached(); });
     mqttClient->addPublisher("spa/state",              []() -> uint16_t { return controlPanel->getRawStatus(); });
 
-    mqttClient->addSubscriber("spa/temp/desired/set",  [](uint16_t v) -> bool { return controlPanel->setDesiredTemperatureCelsius(v); });
+    mqttClient->addSubscriber("spa/state/temp/desired/set",  [](uint16_t v) -> bool { return controlPanel->setDesiredTemperatureCelsius(v); });
     mqttClient->addSubscriber("spa/state/power/set",   [](bool v) -> bool { return controlPanel->setPowerOn(v); });
     mqttClient->addSubscriber("spa/state/filter/set",  [](bool v) -> bool { return controlPanel->setFilterOn(v); });
     mqttClient->addSubscriber("spa/state/heater/set",  [](bool v) -> bool { return controlPanel->setHeaterOn(v); });
