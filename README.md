@@ -64,17 +64,17 @@ The controller embedded MQTT client uses protocol v3.1.1.
 Publish Topics:
 - **spa/status** :  online | offline (Will topic)
 - **spa/state** : number - raw state value, a bit per control, for debug mainly.
-- **spa/state/power**  :  true | false
-- **spa/state/filter** : true | false
-- **spa/state/heater** : true | false
-- **spa/state/heatreached** : true | false (true if heat is reached)
-- **spa/state/bubble** : true | false
+- **spa/state/power**  :  on | off
+- **spa/state/filter** : on | off
+- **spa/state/heater** : on | off
+- **spa/state/heatreached** : on | off (on if heat is reached)
+- **spa/state/bubble** : on | off
 - **spa/temp/board** : number - in Celsius degree
 - **spa/temp/water** : number - in Celsius degree
 - **spa/temp/desired** : number - in Celsius degree
 
 Subscribe Topics:
-- **spa/state/power/set** : true | false
-- **spa/state/filter/set** : true | false
-- **spa/state/heater/set** : true | false
-- **spa/state/temp/desired/set** : number - in Celsius degree
+- **spa/state/power/set** : on | off
+- **spa/state/filter/set** : on | off
+- **spa/state/heater/set** : on | off
+- **spa/temp/desired/set** : number - in Celsius degree
