@@ -68,6 +68,7 @@
 
 #define FRAME_DISPLAY_DIGIT_MASK  (FRAME_DISPLAY_FRAGMENT_A|FRAME_DISPLAY_FRAGMENT_B|FRAME_DISPLAY_FRAGMENT_C|FRAME_DISPLAY_FRAGMENT_D|FRAME_DISPLAY_FRAGMENT_E|FRAME_DISPLAY_FRAGMENT_F|FRAME_DISPLAY_FRAGMENT_G)
 
+#define FRAME_DISPLAY_OFF         0x0000
 #define FRAME_DISPLAY_DIGIT0      (FRAME_DISPLAY_FRAGMENT_A | FRAME_DISPLAY_FRAGMENT_B | FRAME_DISPLAY_FRAGMENT_C | FRAME_DISPLAY_FRAGMENT_D | FRAME_DISPLAY_FRAGMENT_E | FRAME_DISPLAY_FRAGMENT_F)
 #define FRAME_DISPLAY_DIGIT1      (FRAME_DISPLAY_FRAGMENT_B | FRAME_DISPLAY_FRAGMENT_C)
 #define FRAME_DISPLAY_DIGIT2      (FRAME_DISPLAY_FRAGMENT_A|FRAME_DISPLAY_FRAGMENT_B|FRAME_DISPLAY_FRAGMENT_G|FRAME_DISPLAY_FRAGMENT_E|FRAME_DISPLAY_FRAGMENT_D)
@@ -84,7 +85,8 @@
 #define FRAME_DISPLAY_DIGITF      (FRAME_DISPLAY_FRAGMENT_E|FRAME_DISPLAY_FRAGMENT_F|FRAME_DISPLAY_FRAGMENT_A|FRAME_DISPLAY_FRAGMENT_G)
 #define FRAME_DISPLAY_DIGITH      (FRAME_DISPLAY_FRAGMENT_B|FRAME_DISPLAY_FRAGMENT_C|FRAME_DISPLAY_FRAGMENT_E|FRAME_DISPLAY_FRAGMENT_F|FRAME_DISPLAY_FRAGMENT_G)
 
-#define DIGITH_VALUE              0x8
+#define DIGITOFF_VALUE            0xB
+#define DIGITH_VALUE              0xD
 
 #define FRAME_LED                 0x4000
 #define FRAME_LED_POWER           0x0001
@@ -112,13 +114,18 @@
 #define DISPLAY_DIGIT4            0x0001
 #define DISPLAY_ALLDIGITS         DISPLAY_DIGIT1 | DISPLAY_DIGIT2 | DISPLAY_DIGIT3 | DISPLAY_DIGIT4
 
+#define DISPLAY_OFF               0xBBBB
+#define DISPLAY_UNIT_F            0x000F
+#define DISPLAY_UNIT_C            0x000C
+
+
 #define DIGITS2UINT(v)            ((((v >> 12) & 0x000F)*100) + (((v >> 8) & 0x000F)*10) + ((v >> 4) & 0x000F))
 #define DISPLAY_UNIT(v)           (v & 0x000F)
 #define NO_ERROR_ON_DISPLAY(v)    ((v & 0xF000) != 0xE000)
-#define TIMING_ON_DISPLAY(v)      ((v & 0x000F) == DIGITH_VALUE)
+#define DISPLAY2ERROR(v)          ((v >> 4) & 0x0FFF)
+#define TEMP_ON_DISPLAY(v)        ((DISPLAY_UNIT(v) == DISPLAY_UNIT_C) || (DISPLAY_UNIT(v) == DISPLAY_UNIT_F))
+#define TIMING_ON_DISPLAY(v)      (DISPLAY_UNIT(v) == DIGITH_VALUE)
 
-#define DISPLAY_UNIT_F            0x000F
-#define DISPLAY_UNIT_C            0x000C
 
 #define UINT8_TRUE                0x01
 #define UINT8_FALSE               0x00
@@ -126,11 +133,8 @@
 #define UNSET_VALUE               0xFFFF
 #define UNSET_VALUEUINT8          0xFF
 
-
-#define RST_GLITCH_COUNTER        2000
-#define MIN_GLITCH_COUNTER        1000
-#define PREVENT_GLITCH_VALUE(src, dest, cnt)  if (dest != src) { if ((frameCounter - cnt) > RST_GLITCH_COUNTER) { cnt = frameCounter; } else if ((frameCounter - cnt) > MIN_GLITCH_COUNTER) { dest = src; }}
-
+#define INIT_STABLE_VALUE_COUNTER   10
+#define INIT_STABLE_WATER_COUNTER   500 
 
 #define COMMAND_ADDRESS_S0        0x00
 #define COMMAND_ADDRESS_S1        0x01
@@ -177,13 +181,19 @@
 #define BUTTON_HOLD_PRESSED_MS    300
 #define BUTTON_INTERVAL_MS        500
 
+#define PUSH_COUNTER_MAX          25
+
 #define MIN_SET_DESIRED_TEMPERATURE   20
 #define MAX_SET_DESIRED_TEMPERATURE   40
+
+#define BLINK_DESIRED_FRAME_MAX       600
+#define BLINK_RESET_FRAME_MIN         1300
 
 #define UNITCHANGE_FRAME_COUNTER_MAX  2500
 #define UNITCHANGE_MIN                5
 
-#define RST_ERROR_FRAME_COUNTER       5000
+#define RST_ERROR_FRAME_COUNTER       10000
+
 
 CTRLPanel  *CTRLPanel::getInstance() {
   if (instance == NULL) {
@@ -238,22 +248,40 @@ uint8_t CTRLPanel::isBubbleOn() {
 }
 
 uint8_t CTRLPanel::isHeaterOn() {
+ 
+#ifdef SJB_HS
+  return (ledStatus != UNSET_VALUE) ? (!(ledStatus & FRAME_LED_SANITIZER) && ((ledStatus & (FRAME_LED_HEATER | FRAME_LED_HEATREACHED))) ? UINT8_TRUE : UINT8_FALSE) : UNSET_VALUEUINT8;
+#else 
   return (ledStatus != UNSET_VALUE) ? ((ledStatus & (FRAME_LED_HEATER | FRAME_LED_HEATREACHED)) ? UINT8_TRUE : UINT8_FALSE) : UNSET_VALUEUINT8;
+#endif // SJB_HS
+
 }
 
 uint8_t CTRLPanel::isHeatReached() {
-  return (ledStatus != UNSET_VALUE) ? ((ledStatus & FRAME_LED_HEATREACHED) ? UINT8_TRUE : UINT8_FALSE) : UNSET_VALUEUINT8;
+
+#ifdef SJB_HS
+    return (ledStatus != UNSET_VALUE) ? (!(ledStatus & FRAME_LED_SANITIZER) && ((ledStatus & FRAME_LED_HEATREACHED)) ? UINT8_TRUE : UINT8_FALSE) : UNSET_VALUEUINT8; 
+#else 
+    return (ledStatus != UNSET_VALUE) ? ((ledStatus & FRAME_LED_HEATREACHED) ? UINT8_TRUE : UINT8_FALSE) : UNSET_VALUEUINT8;
+#endif // SJB_HS
+
 }
 
 #ifdef SJB_HS
   uint16_t CTRLPanel::getSanitizerTime() {
-    if ((ledStatus != UNSET_VALUE) && (sanitizerTime != UNSET_VALUE)) {
+    if (ledStatus != UNSET_VALUE) {
       if (ledStatus & FRAME_LED_SANITIZER) {
-        uint16_t time = DIGITS2UINT(sanitizerTime);
-        // May happen sanitize time has fake value due to values multiplexing
-        return (time <= 8) ? time : UNSET_VALUE;
+        if (sanitizerTime != UNSET_VALUE) {
+          uint16_t time = DIGITS2UINT(sanitizerTime);
+          // May happen sanitize time has fake value due to values multiplexing
+          return ((time <= 8) && (time > 0)) ? time : UNSET_VALUE;
+          
+        } else {
 
+          return UNSET_VALUE;
+        }
       } else {
+
         return 0;
       }
 
@@ -263,19 +291,20 @@ uint8_t CTRLPanel::isHeatReached() {
   }
 
   boolean CTRLPanel::setSanitizerTime(uint16_t time) {
-    if (isPowerOn()) {
-      uint16_t currentValue;
+    if (isPowerOn() && (errorValue == 0)) {
+      uint16_t pushCounter = 0;
 
       if (time == 0) {
         if ((ledStatus != UNSET_VALUE) && (ledStatus & FRAME_LED_SANITIZER)) {
-
           do {
             
             pushButton(BUTTON_SANITIZER);
             delay(BUTTON_INTERVAL_MS);
 
+            pushCounter ++;
+
             // push button till 8H            
-          } while ((currentValue = DIGITS2UINT(sanitizerTime)) != 8);
+          } while ((DIGITS2UINT(sanitizerTime) != 8) && (pushCounter < PUSH_COUNTER_MAX));
           // then push a last time to cancel
           pushButton(BUTTON_SANITIZER);
 
@@ -283,9 +312,11 @@ uint8_t CTRLPanel::isHeatReached() {
 
       } else if ((time == 3) || (time == 5) || (time == 8)) {
 
-        while ((currentValue = DIGITS2UINT(sanitizerTime)) != time) {
+        while ((pushCounter < PUSH_COUNTER_MAX) && (DIGITS2UINT(sanitizerTime) != time)) {
             pushButton(BUTTON_SANITIZER);
             delay(BUTTON_INTERVAL_MS);
+
+            pushCounter ++;
         }
 
       } else { // Invalid value
@@ -304,24 +335,25 @@ uint8_t CTRLPanel::isHeatReached() {
 
 boolean CTRLPanel::setDesiredTemperatureCelsius(uint16_t temp) {
   if ((temp >= MIN_SET_DESIRED_TEMPERATURE) && (temp <= MAX_SET_DESIRED_TEMPERATURE)) {
-    if (isPowerOn()) {
-      uint16_t  uint16DesiredTemp;
+    if (isPowerOn() && (errorValue == 0)) {
+      uint16_t  uint16DesiredTemp, pushCounter = 0;
 
-      while (getDesiredTemperatureCelsius() == UNSET_VALUE) {
-        DBG("CTRL: current desired temperature unknown");
+      while ((getDesiredTemperatureCelsius() == UNSET_VALUE) && (pushCounter < PUSH_COUNTER_MAX)) {
         pushButton(BUTTON_TEMPDOWN);
         delay(BUTTON_INTERVAL_MS);
+
+        pushCounter++;
       }
 
-      while ((uint16DesiredTemp = getDesiredTemperatureCelsius()) != temp) {
-        DBG("CTRL: current desired temperature= %d", uint16DesiredTemp);
-
+      while ((pushCounter < PUSH_COUNTER_MAX) && ((uint16DesiredTemp = getDesiredTemperatureCelsius()) != temp)) {
         if (uint16DesiredTemp > temp) {
           pushButton(BUTTON_TEMPDOWN);
         } else {
           pushButton(BUTTON_TEMPUP);
         }
         delay(BUTTON_INTERVAL_MS);
+
+        pushCounter++;
       }
     }
     return true;
@@ -370,18 +402,23 @@ volatile uint16_t CTRLPanel::waterTemp      = UNSET_VALUE;
 volatile uint16_t CTRLPanel::desiredTemp    = UNSET_VALUE;
 volatile uint16_t CTRLPanel::sanitizerTime  = UNSET_VALUE;
 
-volatile uint16_t CTRLPanel::lastWaterTemp = UNSET_VALUE;
-
 volatile uint16_t CTRLPanel::unsetDigits   = DISPLAY_ALLDIGITS;
 
-volatile uint32_t CTRLPanel::lastBlackDisplayFrameCounter = 0;
-volatile bool     CTRLPanel::isDisplayBlink               = false;
+volatile uint32_t CTRLPanel::lastBlackDisplayFrameCounter       = 0;
+volatile bool     CTRLPanel::isDisplayBlink                     = false;
 
-volatile uint32_t CTRLPanel::lastWaterTempChangeFrameCounter    = 0;
-volatile uint32_t CTRLPanel::lastDesiredTempChangeFrameCounter  = 0;
-volatile uint32_t CTRLPanel::lastSanitizerTimeChangeFrameCounter= 0;
-volatile uint32_t CTRLPanel::lastLedStatusChangeFrameCounter    = 0;
 volatile uint32_t CTRLPanel::lastErrorChangeFrameCounter        = 0;
+
+volatile uint16_t CTRLPanel::latestLedStatus                    = UNSET_VALUE;
+volatile uint16_t CTRLPanel::stableLedStatusCounter             = INIT_STABLE_VALUE_COUNTER;
+
+volatile uint16_t CTRLPanel::latestDisplayValue                 = UNSET_VALUE;
+volatile uint16_t CTRLPanel::stableDisplayValueCounter          = INIT_STABLE_VALUE_COUNTER;
+
+volatile uint16_t CTRLPanel::latestDesiredTemp                  = UNSET_VALUE;
+
+volatile uint16_t CTRLPanel::latestWaterTemp                    = UNSET_VALUE;
+volatile uint16_t CTRLPanel::stableWaterTempCounter             = INIT_STABLE_WATER_COUNTER;
 
 volatile uint8_t  CTRLPanel::lastTempUnit                       = 0;
 volatile uint32_t CTRLPanel::lastTempUnitChangeFrameCounter     = 0;
@@ -433,20 +470,14 @@ void CTRLPanel::holdRisingInterrupt() {
     
     if (frameValue != FRAME_CUE) {
      if (frameValue & FRAME_DISPLAY) {
-        byte digit;
-
-        if ((frameValue & FRAME_DISPLAY_DIGIT_MASK) == 0) { // black display
-            if (((frameCounter - lastBlackDisplayFrameCounter) > 900)
-                && ((frameCounter - lastBlackDisplayFrameCounter) < 1000)) {
-
-              isDisplayBlink = true;      
-            }
-            lastBlackDisplayFrameCounter  = frameCounter;
-            unsetDigits                   = DISPLAY_ALLDIGITS;
-            return ;
-        }
+        byte  digit;
 
         switch (frameValue & FRAME_DISPLAY_DIGIT_MASK) {
+          case FRAME_DISPLAY_OFF:
+            digit         = DIGITOFF_VALUE;
+            unsetDigits   = 0;
+            displayValue  = DISPLAY_OFF;
+            break;
           case FRAME_DISPLAY_DIGIT0:
             digit = 0x0;
             break;
@@ -490,9 +521,8 @@ void CTRLPanel::holdRisingInterrupt() {
             digit = 0xF;
             break;
           case FRAME_DISPLAY_DIGITH:
-            digit = DIGITH_VALUE; // happens on display4 when blinking sanitizer time, display4  should only display C, F or H. Use DIGITH_VALUE that should not overlap
+            digit = DIGITH_VALUE; // happens on display4 when sanitizer time.
             break;
-
             
           default:
             return ;
@@ -501,6 +531,11 @@ void CTRLPanel::holdRisingInterrupt() {
         if (frameValue & FRAME_DISPLAY_1) {
           displayValue = (displayValue & 0x0FFF) + (digit << 12);
           unsetDigits &= ~DISPLAY_DIGIT1;
+
+          if (digit == 0xE) { // Display error, digit4 is not set
+            displayValue = (displayValue & 0xFFF0);
+            unsetDigits &= ~DISPLAY_DIGIT4;
+          }
           
         } else if (frameValue & FRAME_DISPLAY_2) {
           displayValue = (displayValue & 0xF0FF) + (digit << 8);
@@ -516,71 +551,111 @@ void CTRLPanel::holdRisingInterrupt() {
         }
 
         if (unsetDigits == 0) {
-          if (NO_ERROR_ON_DISPLAY(displayValue)) {
-            if (isDisplayBlink) { // display is blinking, set desired temperature
-              
-              if (frameCounter - lastBlackDisplayFrameCounter > 960) { // no blinking since too long
-                isDisplayBlink = false;
-                unsetDigits = DISPLAY_ALLDIGITS;
-                
-              } else {
+          unsetDigits = DISPLAY_ALLDIGITS;
 
-                if (TIMING_ON_DISPLAY(displayValue)) { // sanitizer time setting
-                  PREVENT_GLITCH_VALUE(displayValue, sanitizerTime, lastSanitizerTimeChangeFrameCounter);
+          if (displayValue == latestDisplayValue) {
+            stableDisplayValueCounter--;
+            if (stableDisplayValueCounter == 0) {
+              stableDisplayValueCounter = INIT_STABLE_VALUE_COUNTER;
 
-                } else {
-                  PREVENT_GLITCH_VALUE(displayValue, desiredTemp, lastDesiredTempChangeFrameCounter);
+              if (displayValue == DISPLAY_OFF) {
+                lastBlackDisplayFrameCounter  = frameCounter;
+                isDisplayBlink = true;
+
+                if (latestDesiredTemp != UNSET_VALUE) {
+                    desiredTemp = latestDesiredTemp;
                 }
-              }
-            } else { // no blinking
-
-              if (TIMING_ON_DISPLAY(displayValue)) { // sanitizer time
-                PREVENT_GLITCH_VALUE(displayValue, sanitizerTime, lastSanitizerTimeChangeFrameCounter);
 
               } else {
 
-                if (displayValue != waterTemp) {
-                  if ((frameCounter - lastWaterTempChangeFrameCounter) > 5000) {
+                if ((frameCounter - lastBlackDisplayFrameCounter) > BLINK_RESET_FRAME_MIN) { // blinking is over
+                  isDisplayBlink    = false;
+                  latestDesiredTemp = UNSET_VALUE;
+                }                
 
-                    lastWaterTempChangeFrameCounter = frameCounter;
-                    lastWaterTemp = waterTemp;
+                if (NO_ERROR_ON_DISPLAY(displayValue)) {
 
-                  } else if ((frameCounter - lastWaterTempChangeFrameCounter) > 3000) {
-                    if (lastWaterTemp != displayValue) {
-                      lastWaterTemp = displayValue;
-                      lastWaterTempChangeFrameCounter = frameCounter;
-                    } else {
-                      waterTemp = lastWaterTemp;
+                  if (TIMING_ON_DISPLAY(displayValue)) { // sanitizer time
+                    sanitizerTime = displayValue;
+
+                  } else if (TEMP_ON_DISPLAY(displayValue)) {
+
+                    if (isDisplayBlink && (errorValue == 0)) { // blinking but not in error !
+
+                      // when blink finished, it displays water temp that should not be confused
+                      // with desired temp !
+                      // So desired temp is read just after a black screen and set at next black screen
+
+                      if ((frameCounter - lastBlackDisplayFrameCounter) < BLINK_DESIRED_FRAME_MAX) { 
+                        latestDesiredTemp = displayValue;
+                      }
+
+                    } else { // not blinking
+
+                      if (displayValue == latestWaterTemp) {
+                        stableWaterTempCounter--;
+                        if (stableWaterTempCounter == 0) {
+                          waterTemp = displayValue;
+                          stableWaterTempCounter = INIT_STABLE_WATER_COUNTER;
+                        }
+
+                      } else {
+                        latestWaterTemp = displayValue;
+                        stableWaterTempCounter = INIT_STABLE_WATER_COUNTER;
+                      }
+
+                      if (DISPLAY_UNIT(displayValue) != lastTempUnit) {
+                        if ((frameCounter - lastTempUnitChangeFrameCounter) < UNITCHANGE_FRAME_COUNTER_MAX) {
+                          counterTempUnitChanged++;
+                        } else {
+                          counterTempUnitChanged = 0;
+                        }
+
+                        lastTempUnitChangeFrameCounter = frameCounter;
+                        lastTempUnit = DISPLAY_UNIT(displayValue);
+                      }
                     }
-                  } 
-                }
-
-                if (DISPLAY_UNIT(displayValue) != lastTempUnit) {
-                  if ((frameCounter - lastTempUnitChangeFrameCounter) < UNITCHANGE_FRAME_COUNTER_MAX) {
-                    counterTempUnitChanged++;
-                  } else {
-                    counterTempUnitChanged = 0;
                   }
 
-                  lastTempUnitChangeFrameCounter = frameCounter;
-                  lastTempUnit = DISPLAY_UNIT(displayValue);
-                }
-              }
+                } else { // error on display
 
+                  errorValue = DISPLAY2ERROR(displayValue);
+                  lastErrorChangeFrameCounter = frameCounter;
+                }
+              } 
             }
 
-          } else { // error on display
-            PREVENT_GLITCH_VALUE(displayValue, errorValue, lastErrorChangeFrameCounter);
-          }          
-        }
+          } else { // displayValue not stable
+
+            // While error, there is a black screen after error display
+            // not visible by eye but must not break the stable counter
+
+            if (NO_ERROR_ON_DISPLAY(latestDisplayValue) || (displayValue != DISPLAY_OFF)) {
+              latestDisplayValue = displayValue;
+              stableDisplayValueCounter = INIT_STABLE_VALUE_COUNTER;
+            }
+          }
+
+        } // else all digits not yet set
 
       } else if (frameValue & FRAME_LED) {
-        PREVENT_GLITCH_VALUE(frameValue, ledStatus, lastLedStatusChangeFrameCounter);
-      } 
-    }
-    // else cue frame
+
+        if (frameValue == latestLedStatus) {
+            stableLedStatusCounter--;
+            if (stableLedStatusCounter == 0) {
+              ledStatus = frameValue;
+              stableLedStatusCounter = INIT_STABLE_VALUE_COUNTER;
+            }
+        } else {
+          latestLedStatus = frameValue;
+          stableLedStatusCounter = INIT_STABLE_VALUE_COUNTER;
+        }
+
+      }
+
+    } // else cue frame
     
-  } else { // esp32 misses some bits in frame (performance issue !?)
+  } else { // esp8266 misses some bits in frame (performance issue !?)
     frameDropped ++;
     frameShift = 0;
   }

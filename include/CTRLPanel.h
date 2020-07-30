@@ -69,22 +69,28 @@ class CTRLPanel {
     static volatile uint16_t  desiredTemp;
     static volatile uint16_t  sanitizerTime;
 
-    static volatile uint16_t  lastWaterTemp;
-
     static volatile uint32_t  lastBlackDisplayFrameCounter;
     static volatile bool      isDisplayBlink;
 
-    static volatile uint32_t  lastWaterTempChangeFrameCounter;
-    static volatile uint32_t  lastDesiredTempChangeFrameCounter;
-    static volatile uint32_t  lastSanitizerTimeChangeFrameCounter;
-    static volatile uint32_t  lastLedStatusChangeFrameCounter;
     static volatile uint32_t  lastErrorChangeFrameCounter;
+
+    static volatile uint16_t  latestLedStatus;
+    static volatile uint16_t  stableLedStatusCounter;
+
+    static volatile uint16_t  latestDisplayValue;
+    static volatile uint16_t  stableDisplayValueCounter;
+
+    static volatile uint16_t  latestDesiredTemp;
+
+    static volatile uint16_t  latestWaterTemp;
+    static volatile uint16_t  stableWaterTempCounter;
     
     static volatile uint16_t  unsetDigits;
 
     static volatile uint8_t   lastTempUnit;
     static volatile uint32_t  lastTempUnitChangeFrameCounter;
     static volatile uint16_t  counterTempUnitChanged;
+
 
     CTRLPanel();
     static ICACHE_RAM_ATTR void clckRisingInterrupt();

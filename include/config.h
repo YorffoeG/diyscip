@@ -2,19 +2,18 @@
 #define CONFIG_H
 
 #define OTA_ENABLED
-#define DBG_TCP_ENABLED
-#define DBG_SERIAL_ENABLED
+//#define DBG_TCP_ENABLED
+//#define DBG_SERIAL_ENABLED
 
 
 /* PCB DESIGN   */
-//#define PCB_DESIGN_1
-#define PCB_DESIGN_2 
+#define PCB_DESIGN_1
+//#define PCB_DESIGN_2 
 
 
 /* SPA MODEL    */
-//#define SSP_H       // SSP-H-20-1/SSP-H-20-1C/SSP-H20-2
-#define SJB_HS    // SJB-HS-20-1G/SJB-HS-30-1G/SJB-HS-22-1G/SJB-HS-33-1G
-
+#define SSP_H       // SSP-H-20-1/SSP-H-20-1C/SSP-H20-2
+//#define SJB_HS    // SJB-HS-20-1G/SJB-HS-30-1G/SJB-HS-22-1G/SJB-HS-33-1G
 
 
 #define DBG_TCP_PORT        8888
@@ -55,7 +54,7 @@
 #define NTC_BETA    3950.0
 
 #define WIFI_STA_HOSTNAME   "diyscip"
-#define WIFI_AP_NAME        "DYISCIP_Setup"
+#define WIFI_AP_NAME        "DIYSCIP_Setup"
 
 
 
