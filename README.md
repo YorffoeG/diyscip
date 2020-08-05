@@ -11,18 +11,28 @@ It connects to your WiFi network and communicate to a MQTT server for control (M
 
 > :warning: **disclaimer:** This project is not affiliated with Intxx. It is distributed in the hope it will be useful but WITHOUT ANY WARRANTY. Any damaged on your spa or lost of original product warranty is in your own responsibility, including any consequences of using this project.
 
-> :warning: **compatibilty:** This project has been developped and test on model SSP-H20-1C only. I guess it should works with SSP-H-20-1 and SSP-H-20-2 because those models share the same control panel. For the others models, some minors software AND hardware modifications may be necessary. Feel free to contact me to share our experience and improve this project compatibility.
 
-![image](https://github.com/YorffoeG/diyscip/blob/master/docs/controller_1.jpg)
+![image](https://github.com/YorffoeG/diyscip/blob/master/docs/controller_PCB_V2.jpg)
 
 ### How to build it ?
 You need first the hardware ! Components are easy to find but still, it need some skills to build it.
 
-The main part is a NodeMcu V3, based on the esp8266. I used [this one](https://www.amazon.fr/dp/B06Y1ZPNMS) for prototyping. Using a NodeMcu development board rather than a simple ESP8266 chip is for convinient: it's include a 5V (from SPA) to 3.3v converter and mainly it offers a USB connection for upload and debug software. Electronic schematic is [here](https://github.com/YorffoeG/diyscip/blob/master/docs/schematic.jpg).
-
 As an IDE, i use [Visual Studio Code](https://code.visualstudio.com/) with [PlatformIO](https://platformio.org/): Free and in my opinion, it offers a better usability for source management.
 
 For the spa connectors which are Intxx design specific, they need to be 3D printed. I use [those ones](https://www.thingiverse.com/thing:4130911) by Psykokwak. Thanks for the share ! :+1:
+
+#### PCB_V1
+Originaly, V1 design was built with a NodeMcu V3, based on the esp8266. I used [this one](https://www.amazon.fr/dp/B06Y1ZPNMS) for prototyping. Using a NodeMcu development board rather than a simple ESP8266 chip is for convinient: it's include a 5V (from SPA) to 3.3v converter and mainly it offers a USB connection for upload and debug software. Electronic schematic is [here](https://github.com/YorffoeG/diyscip/blob/master/docs/schematic_PCB_V1.jpg).
+
+**It's only supporting SSP-xxx spa models**
+
+#### PCB_V2
+Based on PCB_V1 experience, V2 design improve electical compatibility and add support to SJB models. It use directly an esp8266 and add electrical level shifters from TTL signal (spa) to CMOS signal (esp8266). I know there are lots of debate on Internet to know if esp8266 IO are or not 5V tolerant, even it seems to work with TTL signal, it's not afficialy supported, so i prefered to respect the rules of art. A 5V to 3.3v voltage converter also ensure esp8266 power supply.
+A second analog multiplexer is added to make the pcb more generic and enable a compatibility to all Intxx spa model.
+Electronic schematic is [here](https://github.com/YorffoeG/diyscip/blob/master/docs/schematic_PCB_V2.jpg).
+
+**It's now supporting SSP-xxx and SJB-xxx spa model**
+
 
 
 Don't feel comfortable with hardware manufacturing ? That's a Do It Yourself project :smile: But feel free to contact me at _diyscip(AT)runrunweb.net_, i may have some ready to use controller in my pocket. But keep in mind it's your responsibility to use it on your spa.
@@ -44,7 +54,6 @@ You can also take a free demo tour : https://diyscip.web.app
 ### Behind the code
 Based on reverse engineering of control panel electronics, 3 wires provide a clock, a data and a hold signal to two 8 bit shift registers in serial (74HC595). The outputs of those registers enable or not the leds (including those of the 7-digits displays). Each buttons are also connected to a register output. When it's pressed the corresponding output register is connected with data signal through a 1kOhm resistor.
 
-> The corresponding function of each register output is probably depending of the spa models. This is the point that need to be adapted in software/hardware to others models than the SSP-H20-1C.
 
 The DIYSCIP controller is plugged in parallel with signal from control panel and motor block.
 For supervision, the onboard esp8266 read at clock frequency the data signal then the hold signal cut the flow to a 16 bits frame. By decoding this frame, you get the state of the leds and of the 7 digits display on control panel.
@@ -62,19 +71,24 @@ At last, a MQTT client send and receive control/command from a MQTT server throu
 The controller embedded MQTT client uses protocol v3.1.1.
 
 Publish Topics:
+- **spa/model** : _string_ - the spa model configured
 - **spa/status** :  online | offline (Will topic)
-- **spa/state** : number - raw state value, a bit per control, for debug mainly.
+- **spa/sys/version** : _string_ - the firmware version
+- **spa/sys/wifi** : _number_ - Wifi signal level from 0 to 100 (below 20 is very poor)
+- **spa/state** : _number_ - raw state value, a bit per control, for debug mainly.
 - **spa/state/power**  :  on | off
 - **spa/state/filter** : on | off
 - **spa/state/heater** : on | off
 - **spa/state/heatreached** : on | off (on if heat is reached)
 - **spa/state/bubble** : on | off
-- **spa/temp/board** : number - in Celsius degree
-- **spa/temp/water** : number - in Celsius degree
-- **spa/temp/desired** : number - in Celsius degree
+- **spa/temp/board** : _number_ - in Celsius degree
+- **spa/temp/water** : _number_ - in Celsius degree
+- **spa/temp/desired** : _number_ - in Celsius degree
+- **spa/sanitizer** : _number_ - (SJB model only) hours left of sanitizer, 0 if off
 
 Subscribe Topics:
 - **spa/state/power/set** : on | off
 - **spa/state/filter/set** : on | off
 - **spa/state/heater/set** : on | off
-- **spa/temp/desired/set** : number - in Celsius degree
+- **spa/temp/desired/set** : _number_ - in Celsius degree from 20 to 40
+- **spa/sanitizer/set** : _number_ - (SJB model only) 0 to turn off sanitizer, or value 3, 5, 8 to enable

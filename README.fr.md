@@ -12,20 +12,28 @@ Il se connecte à votre réseau WiFi et communique avec un serveur MQTT pour le 
 
 > :warning: **attention:** Ce projet n'est pas affilié à Intxx. Il est distribué dans l'espoir qui peut vous être utile mais SANS AUCUNE GARANTIE. Tout dommage sur votre spa ou la perte de la garantie initiale du produit est de votre responsabilité, y compris toutes les conséquences liées à l'utilisation de ce projet.
 
-> :warning: **compatilibilité:** Ce projet a été développé et testé sur le model SSP-H20-1C uniquement. Je suppose qu'il doit fonctionner avec SSP-H-20-1 et SSP-H-20-2 car ces modèles partage le même panneau de commande. Pour les autres modèles, des modifications mineures du logiciel ET du schéma de la carte peuvent être nécessaires. N'hésitez pas à me contacter pour partager nos expériences et améliorer ainsi la compatilité de ce projet.
 
-
-![image](https://github.com/YorffoeG/diyscip/blob/master/docs/controller_1.jpg)
+![image](https://github.com/YorffoeG/diyscip/blob/master/docs/controller_PCB_V2.jpg)
 
 ### Comment le construire ?
 Vous avez d'abord besoin du fabriquer la carte ! Les composants sont faciles à trouver, mais ça nécessite quand même d'être à l'aise avec l'électronique.
-
-Le coeur du système est un NodeMcu V3, basé sur l'esp8266. J'ai utilisé [celui-ci](https://www.amazon.fr/dp/B06Y1ZPNMS) pour le prototypage. Utiliser une carte de développement NodeMcu plutôt qu'un simple composant ESP8266 est une question de commodité: elle intégre un convertisseur 5V (du spa) vers 3.3v et surtout elle offre une connection USB pour le chargement et le debug du logiciel. Le schéma électronique est [ici](https://github.com/YorffoeG/diyscip/blob/master/docs/schematic.jpg) !
 
 Comme IDE, j'utilise [Visual Studio Code](https://code.visualstudio.com/) avec [PlatformIO](https://platformio.org/): Gratuit et pour moi, il offre une meilleure ergonomie pour la gestion des sources.
 
 Pour les connections au SPA qui sont spécifiques à Intxx, vous devrez les imprimer en 3D. J'utilise [ceux-ci](https://www.thingiverse.com/thing:4130911) fournis par Psykokwak. Merci à lui de les avoir partagé ! :+1:
 
+
+#### PCB_V1
+Initialement, la carte V1 était construite à base de NodeMcu V3, basé sur l'esp8266. J'ai utilisé [celui-ci](https://www.amazon.fr/dp/B06Y1ZPNMS) pour le prototypage. Utiliser une carte de développement NodeMcu plutôt qu'un simple composant ESP8266 est une question de commodité: elle intégre un convertisseur 5V (du spa) vers 3.3v et surtout elle offre une connection USB pour le chargement et le debug du logiciel. Le schéma électronique est [ici](https://github.com/YorffoeG/diyscip/blob/master/docs/schematic_PCB_V1.jpg) !
+
+**Cette version ne supporte que les modèles de spa SSP-xxx***
+
+#### PCB_V2
+Suite au retour d'expérience de la V1, la carte V2 améliore la compatibilité électrique et ajoute le support des modèles SJB de spa. Elle utilise directement un esp8266 et ajoute des convertisseurs de niveau en les signaux TTL (spa) and CMOS (esp8266). J'ai lu de grand débat sur Internet à propos de la tolérance au 5V des IO de l'esp8266, même si ce semble être le cas, ce n'est pas officiellement supporté, donc je préfére suivre les régles de l'art. Un convertisseur de tension de 5V à 3.3V assure également l'alimentation électrique de l'esp.
+L'ajout d'un deuxième multipleur analogique permet de rendre la carte plus générique et permet une compatibilité avec dans les modèles de spa Intxx.
+Le schéma électronique est [ici](https://github.com/YorffoeG/diyscip/blob/master/docs/schematic_PCB_V2.jpg).
+
+**Cette version supporte maintenant les modèles SSP-xxx et SJB-xxx**
 
 Vous ne vous sentez pas à l'aise avec la fabrication de la carte ? C'est un projet "Do It Yourself" (Fait Le Toi-même) :smile: N'hésitez pas à me contacter par email _diyscip(AT)runrunweb.net_, il se pourrait que j'ai quelques cartes prêtes dans la poche. Mais gardez en tête qu'il est de votre responsabilité de l'utiliser sur votre spa.
 
@@ -46,8 +54,6 @@ Vous pouvez y jetez un coup d'oeil en version demo: https://diyscip.web.app
 ### Comprendre le code et la carte
 En analysant l'électronique du panneau de commande, 3 fils fournissent une horlode, des données et un signal de bascule à 2 registres à décalages 8 bits (74HC595). La sortie de ces registres allume les leds du panneau (y compris celles des afficheurs 7-digits). Chaque bouton poussoir est également connecté à une sortie de ces registres. Lorqu'un bouton est pressé, la sortie correpondante des registres est connectée au signal data via une resistance de 1kOhm.
 
-> La fonction correspondance de chaque sortie des registres est probablement dépendante du modèle de spa. C'est sur ce point qu'il est nécessaire d'adapter le logiciel et hardware aux modèles autres que le SSP-H20-1C.
-
 Le controlleur DIYSCIP est branché en paralléle sur les signaux entre le bloc commande et le bloc moteur.
 
 Pour la supervision, l'esp8266 embarqué lit le signal data à la fréquence du signal horloge tandis que le signal de bascule découpe le flux de données en trame de 16 bits. En décodant ces trames, vous obtenez l'état des leds et des afficheurs.
@@ -65,19 +71,24 @@ Enfin, un client MQTT envoie et reçoit les états et les commandes depuis un se
 Le controlleur embarque un client MQTT qui utilise le protocole v3.1.1
 
 Publish Topics:
+- **spa/model** : _string_ - Le modèle de spa configuré
 - **spa/status** :  online | offline (Will topic)
-- **spa/state** : number - value brute des états des leds, utile pour le debug.
+- **spa/sys/version** : _string_ - la version du firmware de la carte
+- **spa/sys/wifi** : _number_ - Niveau du signal WiFi de 0 à 100
+- **spa/state** : _number_ - value brute des états des leds, utile pour le debug.
 - **spa/state/power**  :  on | off
 - **spa/state/filter** : on | off
 - **spa/state/heater** : on | off
 - **spa/state/heatreached** : on | off (on si la température est atteinte)
 - **spa/state/bubble** : on | off
-- **spa/temp/board** : number - in Celsius degree
-- **spa/temp/water** : number - in Celsius degree
-- **spa/temp/desired** : number - in Celsius degree
+- **spa/temp/board** : _number_ - in Celsius degree
+- **spa/temp/water** : _number_ - in Celsius degree
+- **spa/temp/desired** : _number_ - in Celsius degree
+- **spa/sanitizer** : _number_ - (SJB model only) Temps restant de désinfection, 0 si éteint
 
 Subscribe Topics:
 - **spa/state/power/set** : on | off
 - **spa/state/filter/set** : on | off
 - **spa/state/heater/set** : on | off
-- **spa/state/temp/desired/set** : number - in Celsius degree
+- **spa/state/temp/desired/set** : _number_ - en degree Celsius de 20 à 40
+- **spa/sanitizer/set** : _number_ - (SJB model only) 0 pour éteindre la désinfection, ou la valeur 3, 5, 8 pour mettre en route.
