@@ -7,13 +7,8 @@
 
 
 /* PCB DESIGN   */
-#define PCB_DESIGN_1
-//#define PCB_DESIGN_2 
-
-
-/* SPA MODEL    */
-#define SSP_H       // SSP-H-20-1/SSP-H-20-1C/SSP-H20-2
-//#define SJB_HS    // SJB-HS-20-1G/SJB-HS-30-1G/SJB-HS-22-1G/SJB-HS-33-1G
+//#define PCB_DESIGN_1
+#define PCB_DESIGN_2 
 
 
 #define DBG_TCP_PORT        8888
@@ -63,14 +58,6 @@
 #error "YOU MUST DEFINE ONE AND ONLY ONE PCB DESIGN"
 #endif
 
-
-#if (defined(SSP_H) && defined(SJB_HS)) || (!defined(SSP_H) && !defined(SJB_HS))
-#error "YOU MUST DEFINE ONE AND ONLY ONE SPA MODEL"
-#endif
-
-#if (defined(SJB_HS) && !defined(PCB_DESIGN_2))
-#error "SJB_HS SUPPORT ONLY WITH PCB_DESIGN_2"
-#endif
 
 
 #endif // CONFIG_H

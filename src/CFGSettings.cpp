@@ -13,6 +13,7 @@
  */ 
 
 #include <EEPROM.h>
+#include "ESP8266WiFi.h"
 
 #include "CFGSettings.h"
 #include "Debug.h"
@@ -28,7 +29,7 @@
  * 
  * |  0  |  1  |  2  |  3  |  4  |  5  |  6  |  7  | ..... 
  * |     |     |     |     |           |     |       
- * |  i     N     1     t  |  datalen  | mode| ssid\0  psk\0  host\0  port\0  deviceID\0  user\0  pwd\0 
+ * |  i     N     1     t  |  datalen  | mode| ssid\0  psk\0  host\0  port\0  deviceID\0  user\0  pwd\0  update\0 model\0
  * 
  * 
  * 
@@ -68,6 +69,7 @@ CFGSettings::CFGSettings() {
     len += this->nextEEPROMField(this->_user,       USER_LEN_MAX);
     len += this->nextEEPROMField(this->_pwd,        PWD_LEN_MAX);
     len += this->nextEEPROMField(this->_update,     UPDATE_LEN_MAX);
+    len += this->nextEEPROMField(this->_model,      MODEL_LEN_MAX);
 }
 
 CFGSettings::MODE CFGSettings::getMode() {
@@ -102,6 +104,7 @@ bool CFGSettings::readHTTPPOST(const char* data) {
     data = this->nextHTTPField(data, this->_user,   USER_LEN_MAX);
     data = this->nextHTTPField(data, this->_pwd,    PWD_LEN_MAX);
     data = this->nextHTTPField(data, this->_update, UPDATE_LEN_MAX);
+    data = this->nextHTTPField(data, this->_model,  MODEL_LEN_MAX);
 
     return !strcmp(data, "EOD");
 }
@@ -124,6 +127,7 @@ bool CFGSettings::save() {
     len += this->writeField(this->_user);
     len += this->writeField(this->_pwd);
     len += this->writeField(this->_update);
+    len += this->writeField(this->_model);
 
     if (this->_currentEEPROMAddress < EEPROM_SIZE) {
 
@@ -183,6 +187,14 @@ const char* CFGSettings::getBrokerPwd() {
 
 bool CFGSettings::isUpdateEnabled() {
     return *(this->_update) != '0';
+}
+
+const char* CFGSettings::getModel() {
+#ifdef PCB_DESIGN_2
+    return this->_model;
+#else
+    return "SSP";
+#endif
 }
 
 

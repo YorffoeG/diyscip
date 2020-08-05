@@ -25,6 +25,7 @@
 #define USER_LEN_MAX            63
 #define PWD_LEN_MAX             63
 #define UPDATE_LEN_MAX          2
+#define MODEL_LEN_MAX           5
 
 
 class CFGSettings {
@@ -58,6 +59,7 @@ public:
     const char* getBrokerUser();
     const char* getBrokerPwd();
     bool        isUpdateEnabled();
+    const char* getModel();
 
 private:
     uint16_t    nextEEPROMField(char* field, uint16_t max_len);
@@ -76,6 +78,7 @@ private:
     char        _user[USER_LEN_MAX+1]           = {0};
     char        _pwd[PWD_LEN_MAX+1]             = {0};
     char        _update[UPDATE_LEN_MAX+1]       = {0};
+    char        _model[MODEL_LEN_MAX+1]         = {0};
 
 };
 

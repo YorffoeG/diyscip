@@ -311,6 +311,19 @@
   </head>
   <body>
     <div id="settings">
+      <h2>Your SPA</h2>
+      <div class="input-field select">
+        <select id="model">
+          <option value="SSP">SSP-xxx</option>
+          <option value="SJB">SJB-xxx</option>
+        </select>
+        <label for="model">Select your SPA model</label>
+      </div>
+      <div class="input-field">
+        <input id="update" type="checkbox" />
+        <label for="update">Enable firmware update</label>
+      </div>
+
       <h2>WiFi Settings</h2>
       <div class="input-field select">
         <select id="ssid" disabled>
@@ -353,10 +366,6 @@
         <label for="pwd">Password</label>
         <button class="hide"></button>
       </div>
-      <div class="input-field">
-        <input id="update" type="checkbox" />
-        <label for="update">Enable firmware update</label>
-      </div>
       <button id="check">APPLY SETTINGS</button>
     </div>
     <div id="checking" class="hidden">
@@ -392,6 +401,7 @@
             user       = document.getElementById('user'),
             pwd        = document.getElementById('pwd'),
             update     = document.getElementById('update'),
+            model      = document.getElementById('model'),
             checks     = document.querySelectorAll('.check'),
             explerr    = document.getElementById('explerr');
 
@@ -460,6 +470,7 @@
           datas += user.value     + '\n';
           datas += pwd.value      + '\n';
           datas += (update.checked ? '1' : '0') + '\n';
+          datas += model.value    + '\n';
           datas += 'EOD';
 
           xhr.onload = () => {
@@ -702,6 +713,7 @@
               user.value    = datas.user;
               pwd.value     = datas.pwd;
               update.checked= datas.update !== '0';
+              model.value   = datas.model;
 
               if (ssid.selectedIndex < 0) {
                 ssid.selectedIndex = 0;

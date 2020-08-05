@@ -94,15 +94,12 @@
 #define FRAME_LED_HEATER          0x0080
 #define FRAME_LED_HEATREACHED     0x0200
 
-#ifdef SSP_H
-  #define FRAME_LED_BUBBLE          0x0400
-#endif
+#define SSP_FRAME_LED_BUBBLE      0x0400
+#define SJB_FRAME_LED_BUBBLE      0x0002
 
-#ifdef SJB_HS
-  #define FRAME_LED_BUBBLE          0x0002
-  #define FRAME_LED_JET             0x0400
-  #define FRAME_LED_SANITIZER       0x2000
-#endif
+#define FRAME_LED_JET             0x0400
+#define FRAME_LED_SANITIZER       0x2000
+
 
 #define FRAME_BEEP_BIT            0x0100
 
@@ -149,33 +146,27 @@
   #define U4                      0x40
   #define U5                      0x80
 
-  #ifdef SSP_H
+  #define BUTTON_POWER            U5 | COMMAND_ADDRESS_S2
+  #define BUTTON_TEMPUP           U5 | COMMAND_ADDRESS_S4
 
-    #define BUTTON_POWER            U5 | COMMAND_ADDRESS_S2
-    #define BUTTON_TEMPUP           U5 | COMMAND_ADDRESS_S4
-    #define BUTTON_TEMPDOWN         U4 | COMMAND_ADDRESS_S7
-    #define BUTTON_FILTER           U4 | COMMAND_ADDRESS_S1
-    #define BUTTON_HEATER           U5 | COMMAND_ADDRESS_S7
+  #define BUTTON_HEATER           U5 | COMMAND_ADDRESS_S7
+  #define BUTTON_SANITIZER        U4 | COMMAND_ADDRESS_S0
 
-  #endif
+  #define SSP_BUTTON_TEMPDOWN     U4 | COMMAND_ADDRESS_S7
+  #define SSP_BUTTON_FILTER       U4 | COMMAND_ADDRESS_S1
 
-  #ifdef SJB_HS
-
-    #define BUTTON_POWER            U5 | COMMAND_ADDRESS_S2
-    #define BUTTON_TEMPUP           U5 | COMMAND_ADDRESS_S4
-    #define BUTTON_TEMPDOWN         U5 | COMMAND_ADDRESS_S1
-    #define BUTTON_FILTER           U4 | COMMAND_ADDRESS_S7
-    #define BUTTON_HEATER           U5 | COMMAND_ADDRESS_S7
-    #define BUTTON_SANITIZER        U4 | COMMAND_ADDRESS_S0
-
-  #endif
+  #define SJB_BUTTON_TEMPDOWN     U5 | COMMAND_ADDRESS_S1
+  #define SJB_BUTTON_FILTER       U4 | COMMAND_ADDRESS_S7
 
 #else
   #define BUTTON_POWER              COMMAND_ADDRESS_S0
   #define BUTTON_TEMPUP             COMMAND_ADDRESS_S1
-  #define BUTTON_TEMPDOWN           COMMAND_ADDRESS_S2
-  #define BUTTON_FILTER             COMMAND_ADDRESS_S3
+  #define SSP_BUTTON_TEMPDOWN       COMMAND_ADDRESS_S2
+  #define SSP_BUTTON_FILTER         COMMAND_ADDRESS_S3
   #define BUTTON_HEATER             COMMAND_ADDRESS_S4
+
+  #define SJB_BUTTON_TEMPDOWN       SSP_BUTTON_TEMPDOWN
+  #define SJB_BUTTON_FILTER         SSP_BUTTON_FILTER
 #endif
 
 #define BUTTON_HOLD_PRESSED_MS    300
@@ -193,11 +184,12 @@
 #define UNITCHANGE_MIN                5
 
 #define RST_ERROR_FRAME_COUNTER       10000
+#define MIN_SANITIZER_FRAME_COUNTER   1500
 
 
-CTRLPanel  *CTRLPanel::getInstance() {
+CTRLPanel  *CTRLPanel::getInstance(bool isSJB) {
   if (instance == NULL) {
-    instance = new CTRLPanel();
+    instance = new CTRLPanel(isSJB);
   }
 
   return instance;
@@ -244,102 +236,103 @@ uint8_t CTRLPanel::isFilterOn() {
 }
 
 uint8_t CTRLPanel::isBubbleOn() {
-  return (ledStatus != UNSET_VALUE) ? ((ledStatus & FRAME_LED_BUBBLE) ? UINT8_TRUE : UINT8_FALSE) : UNSET_VALUEUINT8;
+  return (ledStatus != UNSET_VALUE) ? ((ledStatus & (isSJBModel ? SJB_FRAME_LED_BUBBLE : SSP_FRAME_LED_BUBBLE)) ? UINT8_TRUE : UINT8_FALSE) : UNSET_VALUEUINT8;
 }
 
 uint8_t CTRLPanel::isHeaterOn() {
- 
-#ifdef SJB_HS
-  return (ledStatus != UNSET_VALUE) ? (!(ledStatus & FRAME_LED_SANITIZER) && ((ledStatus & (FRAME_LED_HEATER | FRAME_LED_HEATREACHED))) ? UINT8_TRUE : UINT8_FALSE) : UNSET_VALUEUINT8;
-#else 
-  return (ledStatus != UNSET_VALUE) ? ((ledStatus & (FRAME_LED_HEATER | FRAME_LED_HEATREACHED)) ? UINT8_TRUE : UINT8_FALSE) : UNSET_VALUEUINT8;
-#endif // SJB_HS
-
+  if (isSJBModel) {
+    return (ledStatus != UNSET_VALUE) ? (!(ledStatus & FRAME_LED_SANITIZER) && ((ledStatus & (FRAME_LED_HEATER | FRAME_LED_HEATREACHED))) ? UINT8_TRUE : UINT8_FALSE) : UNSET_VALUEUINT8;
+  } else {
+    return (ledStatus != UNSET_VALUE) ? ((ledStatus & (FRAME_LED_HEATER | FRAME_LED_HEATREACHED)) ? UINT8_TRUE : UINT8_FALSE) : UNSET_VALUEUINT8;
+  }
 }
 
 uint8_t CTRLPanel::isHeatReached() {
-
-#ifdef SJB_HS
-    return (ledStatus != UNSET_VALUE) ? (!(ledStatus & FRAME_LED_SANITIZER) && ((ledStatus & FRAME_LED_HEATREACHED)) ? UINT8_TRUE : UINT8_FALSE) : UNSET_VALUEUINT8; 
-#else 
+  if (isSJBModel) {
+    return (ledStatus != UNSET_VALUE) ? (!(ledStatus & FRAME_LED_SANITIZER) && ((ledStatus & FRAME_LED_HEATREACHED)) ? UINT8_TRUE : UINT8_FALSE) : UNSET_VALUEUINT8;
+  } else {
     return (ledStatus != UNSET_VALUE) ? ((ledStatus & FRAME_LED_HEATREACHED) ? UINT8_TRUE : UINT8_FALSE) : UNSET_VALUEUINT8;
-#endif // SJB_HS
-
+  }
 }
 
-#ifdef SJB_HS
-  uint16_t CTRLPanel::getSanitizerTime() {
-    if (ledStatus != UNSET_VALUE) {
-      if (ledStatus & FRAME_LED_SANITIZER) {
-        if (sanitizerTime != UNSET_VALUE) {
-          uint16_t time = DIGITS2UINT(sanitizerTime);
-          // May happen sanitize time has fake value due to values multiplexing
-          return ((time <= 8) && (time > 0)) ? time : UNSET_VALUE;
-          
-        } else {
+uint16_t CTRLPanel::getSanitizerTime() {
+  if ((ledStatus != UNSET_VALUE) && (sanitizerTime != UNSET_VALUE) && 
+      ((frameCounter - lastSanitizerFrameCounter) > MIN_SANITIZER_FRAME_COUNTER)) {
+    
+    // sanitizer must have been set for at least MIN_SANITIZER_FRAME_COUNTER 
+    // because ledStatus may not have been set yet
 
-          return UNSET_VALUE;
-        }
-      } else {
-
-        return 0;
-      }
+    if (ledStatus & FRAME_LED_SANITIZER) {
+        uint16_t time = DIGITS2UINT(sanitizerTime);
+        // May happen sanitize time has fake value due to values multiplexing
+        return ((time <= 8) && (time > 0)) ? time : UNSET_VALUE;
 
     } else {
-      return UNSET_VALUE;
+
+      return 0;
     }
+
+  } else {
+
+    return UNSET_VALUE;
   }
+}
 
-  boolean CTRLPanel::setSanitizerTime(uint16_t time) {
-    if (isPowerOn() && (errorValue == 0)) {
-      uint16_t pushCounter = 0;
+boolean CTRLPanel::setSanitizerTime(uint16_t time) {
 
-      if (time == 0) {
-        if ((ledStatus != UNSET_VALUE) && (ledStatus & FRAME_LED_SANITIZER)) {
-          do {
-            
-            pushButton(BUTTON_SANITIZER);
-            delay(BUTTON_INTERVAL_MS);
+#ifdef PCB_DESIGN_2
+  if ((ledStatus != UNSET_VALUE) && ((ledStatus & FRAME_LED_POWER) != 0) && (errorValue == 0)) {
+    uint16_t pushCounter = 0;
 
-            pushCounter ++;
+    if (time == 0) {
 
-            // push button till 8H            
-          } while ((DIGITS2UINT(sanitizerTime) != 8) && (pushCounter < PUSH_COUNTER_MAX));
-          // then push a last time to cancel
+      if ((ledStatus != UNSET_VALUE) && (ledStatus & FRAME_LED_SANITIZER)) {
+        do {
+          
           pushButton(BUTTON_SANITIZER);
+          delay(BUTTON_INTERVAL_MS);
 
-        } // else already off
+          pushCounter ++;
 
-      } else if ((time == 3) || (time == 5) || (time == 8)) {
+          // push button till 8H            
+        } while ((DIGITS2UINT(sanitizerTime) != 8) && (pushCounter < PUSH_COUNTER_MAX));
+        // then push a last time to cancel
+        pushButton(BUTTON_SANITIZER);
 
-        while ((pushCounter < PUSH_COUNTER_MAX) && (DIGITS2UINT(sanitizerTime) != time)) {
-            pushButton(BUTTON_SANITIZER);
-            delay(BUTTON_INTERVAL_MS);
+      } // else already off
 
-            pushCounter ++;
-        }
+    } else if ((time == 3) || (time == 5) || (time == 8)) {
+      do {
 
-      } else { // Invalid value
-        return false;
-      }
+          pushButton(BUTTON_SANITIZER);
+          delay(BUTTON_INTERVAL_MS);
 
+          pushCounter ++;
+
+      } while ((pushCounter < PUSH_COUNTER_MAX) && (DIGITS2UINT(sanitizerTime) != time));
+
+    } else { // Invalid value
+      return false;
     }
 
-    return true;
   }
-
-  uint8_t CTRLPanel::isJetOn() {
-    return (ledStatus != UNSET_VALUE) ? ((ledStatus & FRAME_LED_JET) ? UINT8_TRUE : UINT8_FALSE) : UNSET_VALUEUINT8;
-  } 
 #endif
+
+  return true;
+}
+
+uint8_t CTRLPanel::isJetOn() {
+  return (ledStatus != UNSET_VALUE) ? ((ledStatus & FRAME_LED_JET) ? UINT8_TRUE : UINT8_FALSE) : UNSET_VALUEUINT8;
+} 
+
 
 boolean CTRLPanel::setDesiredTemperatureCelsius(uint16_t temp) {
   if ((temp >= MIN_SET_DESIRED_TEMPERATURE) && (temp <= MAX_SET_DESIRED_TEMPERATURE)) {
-    if (isPowerOn() && (errorValue == 0)) {
+    if ((ledStatus != UNSET_VALUE) && ((ledStatus & FRAME_LED_POWER) != 0) && (errorValue == 0)) {
       uint16_t  uint16DesiredTemp, pushCounter = 0;
 
       while ((getDesiredTemperatureCelsius() == UNSET_VALUE) && (pushCounter < PUSH_COUNTER_MAX)) {
-        pushButton(BUTTON_TEMPDOWN);
+        pushButton(BUTTON_TEMPUP);
         delay(BUTTON_INTERVAL_MS);
 
         pushCounter++;
@@ -347,7 +340,7 @@ boolean CTRLPanel::setDesiredTemperatureCelsius(uint16_t temp) {
 
       while ((pushCounter < PUSH_COUNTER_MAX) && ((uint16DesiredTemp = getDesiredTemperatureCelsius()) != temp)) {
         if (uint16DesiredTemp > temp) {
-          pushButton(BUTTON_TEMPDOWN);
+          pushButton(isSJBModel ? SJB_BUTTON_TEMPDOWN : SSP_BUTTON_TEMPDOWN);
         } else {
           pushButton(BUTTON_TEMPUP);
         }
@@ -370,7 +363,7 @@ boolean CTRLPanel::setPowerOn(bool v) {
 
 boolean CTRLPanel::setFilterOn(bool v) {
   if (v ^ (isFilterOn() == UINT8_TRUE)) {
-    pushButton(BUTTON_FILTER);
+    pushButton(isSJBModel ? SJB_BUTTON_FILTER : SSP_BUTTON_FILTER);
   }
   return true;
 }
@@ -404,6 +397,8 @@ volatile uint16_t CTRLPanel::sanitizerTime  = UNSET_VALUE;
 
 volatile uint16_t CTRLPanel::unsetDigits   = DISPLAY_ALLDIGITS;
 
+volatile uint32_t CTRLPanel::lastSanitizerFrameCounter          = 0;
+
 volatile uint32_t CTRLPanel::lastBlackDisplayFrameCounter       = 0;
 volatile bool     CTRLPanel::isDisplayBlink                     = false;
 
@@ -425,7 +420,8 @@ volatile uint32_t CTRLPanel::lastTempUnitChangeFrameCounter     = 0;
 volatile uint16_t CTRLPanel::counterTempUnitChanged             = 0;
 
 
-CTRLPanel::CTRLPanel() {
+CTRLPanel::CTRLPanel(bool isSJB) {
+  isSJBModel = isSJB;
 
   pinMode(DATA_PIN, INPUT);
   pinMode(CLCK_PIN, INPUT);
@@ -576,7 +572,8 @@ void CTRLPanel::holdRisingInterrupt() {
                 if (NO_ERROR_ON_DISPLAY(displayValue)) {
 
                   if (TIMING_ON_DISPLAY(displayValue)) { // sanitizer time
-                    sanitizerTime = displayValue;
+                    sanitizerTime             = displayValue;
+                    lastSanitizerFrameCounter = frameCounter;
 
                   } else if (TEMP_ON_DISPLAY(displayValue)) {
 

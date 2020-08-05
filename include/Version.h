@@ -17,6 +17,6 @@
 
 #include <stdint.h>
 
-const char* FW_VERSION = "1.5.5";
+const char* FW_VERSION = "1.6.4";
 
 #endif // VERSION_H

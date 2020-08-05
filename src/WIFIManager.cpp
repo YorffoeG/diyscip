@@ -200,6 +200,9 @@ void WIFIManager::handleGetSettings() {
   json += jsonEscaped;
   json += "\",\"update\":\"";
   json += _settings.isUpdateEnabled() ? '1' : '0';
+  json += "\",\"model\":\"";
+  jsonEscapeString(_settings.getModel(), jsonEscaped, JSON_ESCAPED_MAX);
+  json += jsonEscaped;
   json += "\",\"check\":\"";
   json += _checkCode;
   json += "\"}";

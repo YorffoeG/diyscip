@@ -15,7 +15,7 @@
 #ifndef CTRLPANEL_H
 #define CTRLPANEL_H
 
-#include "CFGSettings.h"
+//#include "CFGSettings.h"
 #include "Arduino.h"
 
 #include "config.h"
@@ -23,7 +23,7 @@
 class CTRLPanel {
   
   public:
-    static CTRLPanel* getInstance();
+    static CTRLPanel* getInstance(bool isSJB);
     
     uint32_t  getFrameCounter();
     uint32_t  getFrameDropped();
@@ -39,11 +39,9 @@ class CTRLPanel {
     uint8_t   isHeaterOn();
     uint8_t   isHeatReached();
 
-#ifdef SJB_HS
     uint8_t   isJetOn();
     uint16_t  getSanitizerTime();
     boolean   setSanitizerTime(uint16_t time);
-#endif    
 
     uint16_t  getError();
 
@@ -56,6 +54,7 @@ class CTRLPanel {
 
   private:
     static CTRLPanel*   instance;
+    bool isSJBModel;
     
     static volatile uint16_t  frameValue;
     static volatile uint16_t  frameShift;
@@ -68,6 +67,8 @@ class CTRLPanel {
     static volatile uint16_t  waterTemp;
     static volatile uint16_t  desiredTemp;
     static volatile uint16_t  sanitizerTime;
+
+    static volatile uint32_t  lastSanitizerFrameCounter;
 
     static volatile uint32_t  lastBlackDisplayFrameCounter;
     static volatile bool      isDisplayBlink;
@@ -92,7 +93,7 @@ class CTRLPanel {
     static volatile uint16_t  counterTempUnitChanged;
 
 
-    CTRLPanel();
+    CTRLPanel(bool isSJB);
     static ICACHE_RAM_ATTR void clckRisingInterrupt();
     static ICACHE_RAM_ATTR void holdRisingInterrupt();
 

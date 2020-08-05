@@ -35,7 +35,7 @@ CFGSettings   cfgSettings;
 LEDManager    ledBuiltin(LED_BUILTIN);
 WIFIManager   wifiManager(cfgSettings);
 
-CTRLPanel*    controlPanel  = CTRLPanel::getInstance();
+CTRLPanel*    controlPanel  = CTRLPanel::getInstance(!strcmp(cfgSettings.getModel(), "SJB"));
 TEMPSensor*   tempSensor    = TEMPSensor::getInstance();
 
 MQTTClient*   mqttClient    = NULL;
@@ -104,11 +104,11 @@ void setup() {
     mqttClient->addPublisher("spa/state/heater",       []() -> uint8_t  { return controlPanel->isHeaterOn(); });
     mqttClient->addPublisher("spa/state/bubble",       []() -> uint8_t  { return controlPanel->isBubbleOn(); });
 
-#ifdef SJB_HS
-    mqttClient->addPublisher("spa/state/jet",          []() -> uint8_t  { return controlPanel->isJetOn(); });
-    mqttClient->addPublisher("spa/sanitizer",          []() -> uint16_t { return controlPanel->getSanitizerTime(); });
-    mqttClient->addSubscriber("spa/sanitizer/set",     [](uint16_t v) -> bool { return controlPanel->setSanitizerTime(v); });
-#endif
+    if (!strcmp(cfgSettings.getModel(), "SJB")) {
+      mqttClient->addPublisher("spa/state/jet",        []() -> uint8_t  { return controlPanel->isJetOn(); });
+      mqttClient->addPublisher("spa/sanitizer",        []() -> uint16_t { return controlPanel->getSanitizerTime(); });
+      mqttClient->addSubscriber("spa/sanitizer/set",   [](uint16_t v) -> bool { return controlPanel->setSanitizerTime(v); });
+    }
 
     mqttClient->addPublisher("spa/state/heatreached",  []() -> uint8_t  { return controlPanel->isHeatReached(); });
     mqttClient->addPublisher("spa/state",              []() -> uint16_t { return controlPanel->getRawStatus();  });

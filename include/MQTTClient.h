@@ -26,16 +26,8 @@
 
 #include "config.h"
 
-#ifdef SSP_H
-  #define MAX_PUBLISHER       11
-  #define MAX_SUBSCRIBER      6
-#endif
-
-#ifdef SJB_HS
-  #define MAX_PUBLISHER       13
-  #define MAX_SUBSCRIBER      7
-#endif
-
+#define MAX_PUBLISHER       13
+#define MAX_SUBSCRIBER      7
 
 #define MQTT_HOSTNAME_MAX   HOST_LEN_MAX
 #define MQTT_CLIENTID_MAX   DEVICEID_LEN_MAX
