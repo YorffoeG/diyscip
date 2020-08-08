@@ -26,7 +26,11 @@ Pour les connections au SPA qui sont spécifiques à Intxx, vous devrez les impr
 #### PCB_V1
 Initialement, la carte V1 était construite à base de NodeMcu V3, basé sur l'esp8266. J'ai utilisé [celui-ci](https://www.amazon.fr/dp/B06Y1ZPNMS) pour le prototypage. Utiliser une carte de développement NodeMcu plutôt qu'un simple composant ESP8266 est une question de commodité: elle intégre un convertisseur 5V (du spa) vers 3.3v et surtout elle offre une connection USB pour le chargement et le debug du logiciel. Le schéma électronique est [ici](https://github.com/YorffoeG/diyscip/blob/master/docs/schematic_PCB_V1.jpg) !
 
-**Cette version ne supporte que les modèles de spa SSP-xxx***
+**Cette version ne supporte que les modèles de spa SSP-xxx**
+**Adaptation de cette version pour accepter les spa SJB-xxx**
+Brancher U3 QB => U2 IO5
+Brancher U2 QA => U2 IO6
+Brancher U2 QD => U2 IO7
 
 #### PCB_V2
 Suite au retour d'expérience de la V1, la carte V2 améliore la compatibilité électrique et ajoute le support des modèles SJB de spa. Elle utilise directement un esp8266 et ajoute des convertisseurs de niveau en les signaux TTL (spa) and CMOS (esp8266). J'ai lu de grand débat sur Internet à propos de la tolérance au 5V des IO de l'esp8266, même si ce semble être le cas, ce n'est pas officiellement supporté, donc je préfére suivre les régles de l'art. Un convertisseur de tension de 5V à 3.3V assure également l'alimentation électrique de l'esp.
@@ -52,13 +56,15 @@ Vous pouvez y jetez un coup d'oeil en version demo: https://diyscip.web.app
 ![image](https://github.com/YorffoeG/diyscip/blob/master/docs/frontend_app.jpg)
 
 ### Comprendre le code et la carte
-En analysant l'électronique du panneau de commande, 3 fils fournissent une horlode, des données et un signal de bascule à 2 registres à décalages 8 bits (74HC595). La sortie de ces registres allume les leds du panneau (y compris celles des afficheurs 7-digits). Chaque bouton poussoir est également connecté à une sortie de ces registres. Lorqu'un bouton est pressé, la sortie correpondante des registres est connectée au signal data via une resistance de 1kOhm.
+En analysant l'électronique du panneau de commande, 3 fils fournissent une horloge, des données et un signal de bascule à 2 registres à décalages 8 bits (74HC595 présent dans le panneau de contrôle). La sortie de ces registres allume les leds du panneau (y compris celles des afficheurs 7-digits). Chaque bouton poussoir est également connecté à une sortie de ces registres. Lorqu'un bouton est pressé, la sortie correpondante des registres est connectée au signal data via une resistance de 1kOhm.
 
-Le controlleur DIYSCIP est branché en paralléle sur les signaux entre le bloc commande et le bloc moteur.
+Le controleur DIYSCIP est branché en paralléle sur les signaux entre le bloc commande et le bloc moteur.
 
 Pour la supervision, l'esp8266 embarqué lit le signal data à la fréquence du signal horloge tandis que le signal de bascule découpe le flux de données en trame de 16 bits. En décodant ces trames, vous obtenez l'état des leds et des afficheurs.
 
-Pour le contrôle c'est un peu différent. La carte du DIYSCIP duplique l'électronique des registres à décalage. L'appui sur un bouton est simulé en pilotant un multipleur analogique qui connecte la sortie d'un registre au signal data.
+Pour le contrôle c'est un peu différent. La carte du DIYSCIP duplique les boutons physiques en utilisant l'électronique des registres à décalage. L'appui sur un bouton est simulé en pilotant un multiplexeur analogique (CD4051) qui pilote les sorties des registres et les transmets au signal data.
+
+Chaque sortie des registres correspond à un bouton à simuler, elles nous sont impossées par le modèle du spa
 
 C'est tout, maintenant on peut lire et écrire l'état du spa, simple non ? :smile:
 
@@ -68,10 +74,10 @@ Enfin, un client MQTT envoie et reçoit les états et les commandes depuis un se
 
 
 ### Les MQTT topics
-Le controlleur embarque un client MQTT qui utilise le protocole v3.1.1
+Le controleur embarque un client MQTT qui utilise le protocole v3.1.1
 
 Publish Topics:
-- **spa/model** : _string_ - Le modèle de spa configuré
+- **spa/model** : SSP | SJB - Le modèle de spa configuré
 - **spa/status** :  online | offline (Will topic)
 - **spa/sys/version** : _string_ - la version du firmware de la carte
 - **spa/sys/wifi** : _number_ - Niveau du signal WiFi de 0 à 100
@@ -79,16 +85,18 @@ Publish Topics:
 - **spa/state/power**  :  on | off
 - **spa/state/filter** : on | off
 - **spa/state/heater** : on | off
-- **spa/state/heatreached** : on | off (on si la température est atteinte)
+- **spa/state/heatreached** : on | off ('on' si la température est atteinte)
 - **spa/state/bubble** : on | off
-- **spa/temp/board** : _number_ - in Celsius degree
-- **spa/temp/water** : _number_ - in Celsius degree
-- **spa/temp/desired** : _number_ - in Celsius degree
-- **spa/sanitizer** : _number_ - (SJB model only) Temps restant de désinfection, 0 si éteint
+- **spa/temp/board** : _number_ - en degré degree
+- **spa/temp/water** : _number_ - en degré degree
+- **spa/temp/desired** : _number_ - en degré Celsius degree
+- **spa/sanitizer** : _number_ - (Modèle SJB seulement) Temps restant de désinfection, 0 si éteint
 
 Subscribe Topics:
 - **spa/state/power/set** : on | off
 - **spa/state/filter/set** : on | off
 - **spa/state/heater/set** : on | off
-- **spa/state/temp/desired/set** : _number_ - en degree Celsius de 20 à 40
-- **spa/sanitizer/set** : _number_ - (SJB model only) 0 pour éteindre la désinfection, ou la valeur 3, 5, 8 pour mettre en route.
+- **spa/state/bubble/set** : on | off - Bientôt
+- **spa/state/jet/set** : on | off - Bientôt
+- **spa/state/temp/desired/set** : _number_ - en degré Celsius de 20 à 40
+- **spa/sanitizer/set** : _number_ - (Modèle SJB seulement) 0 pour éteindre la désinfection, ou la valeur 3, 5, 8 pour mettre en route.
