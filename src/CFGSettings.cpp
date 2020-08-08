@@ -190,11 +190,7 @@ bool CFGSettings::isUpdateEnabled() {
 }
 
 const char* CFGSettings::getModel() {
-#ifdef PCB_DESIGN_2
     return this->_model;
-#else
-    return "SSP";
-#endif
 }
 
 
