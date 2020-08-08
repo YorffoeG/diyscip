@@ -169,8 +169,8 @@
   #define SJB_BUTTON_FILTER         SSP_BUTTON_FILTER
 #endif
 
-#define BUTTON_HOLD_PRESSED_MS    300
-#define BUTTON_INTERVAL_MS        500
+#define BUTTON_HOLD_PRESSED_MS    200
+#define BUTTON_INTERVAL_MS        200
 
 #define PUSH_COUNTER_MAX          25
 
