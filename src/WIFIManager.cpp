@@ -21,6 +21,10 @@
 
 #include "../html/home.htm.h"
 
+#ifndef CONST
+#define CONST const
+#endif
+
 #define DNS_PORT    53
 #define HTTP_PORT   80
 
